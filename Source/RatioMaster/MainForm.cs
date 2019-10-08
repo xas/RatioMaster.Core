@@ -455,8 +455,16 @@ namespace RatioMaster_source
         private static void NewMainItem(XmlDocument aXmlDoc, XmlElement aXmlElement, RM data, string name)
         {
             AppendItem(aXmlDoc, aXmlElement, name, "Name");
-            if (data.currentTorrent.filename != null) AppendItem(aXmlDoc, aXmlElement, data.currentTorrent.filename, "Address");
-            else AppendItem(aXmlDoc, aXmlElement, data.torrentFile.Text, "Address");
+            TorrentInfo torrentInfo = data.currentTorrent;
+            if (torrentInfo.filename != null)
+            {
+                AppendItem(aXmlDoc, aXmlElement, torrentInfo.filename, "Address");
+            }
+            else
+            {
+                AppendItem(aXmlDoc, aXmlElement, data.torrentFile.Text, "Address");
+            }
+
             AppendItem(aXmlDoc, aXmlElement, data.trackerAddress.Text, "Tracker");
             AppendItem(aXmlDoc, aXmlElement, data.uploadRate.Text, "UploadSpeed");
             AppendItem(aXmlDoc, aXmlElement, data.chkRandUP.Checked.ToString(), "UploadRandom");

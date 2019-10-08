@@ -330,11 +330,11 @@ namespace BytesRoad.Net.Sockets
             //------------------------------
             // Store IP address
             //
-            long ipAddr = ip.Address.Address;
-            cmd[4] = (byte)((ipAddr & 0x000000FF));
-            cmd[5] = (byte)((ipAddr & 0x0000FF00) >> 8);
-            cmd[6] = (byte)((ipAddr & 0x00FF0000) >> 16);
-            cmd[7] = (byte)((ipAddr & 0xFF000000) >> 24);
+            byte[] ipAddr = ip.Address.GetAddressBytes();
+            cmd[4] = ipAddr[3];
+            cmd[5] = ipAddr[2];
+            cmd[6] = ipAddr[1];
+            cmd[7] = ipAddr[0];
 
             //------------------------------
             // Store port

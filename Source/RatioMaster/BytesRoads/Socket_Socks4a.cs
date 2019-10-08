@@ -226,11 +226,11 @@ namespace BytesRoad.Net.Sockets
             cmd[2] = (byte)((ip.Port & 0xFF00) >> 8);
             cmd[3] = (byte)(ip.Port & 0xFF);
 
-            long ipAddr = ip.Address.Address;
-            cmd[7] = (byte)((ipAddr & 0xFF000000) >> 24);
-            cmd[6] = (byte)((ipAddr & 0x00FF0000) >> 16);
-            cmd[5] = (byte)((ipAddr & 0x0000FF00) >> 8);
-            cmd[4] = (byte)((ipAddr & 0x000000FF));
+            byte[] ipAddr = ip.Address.GetAddressBytes();
+            cmd[4] = ipAddr[3];
+            cmd[5] = ipAddr[2];
+            cmd[6] = ipAddr[1];
+            cmd[7] = ipAddr[0];
             if (userLength > 0)
                 Array.Copy(_proxyUser, 0, cmd, 8, userLength);
             cmd[8 + userLength] = 0;
