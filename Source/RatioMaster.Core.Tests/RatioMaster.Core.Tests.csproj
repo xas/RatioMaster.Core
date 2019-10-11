@@ -6,10 +6,11 @@
 
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="4.6.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RatioMaster.Core\RatioMaster.Core.csproj" />
+    <ProjectReference Include="..\RatioMaster.Core.WinApp\RatioMaster.Core.WinApp.csproj" />
   </ItemGroup>
 
 </Project>

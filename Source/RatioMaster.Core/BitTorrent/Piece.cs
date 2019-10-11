@@ -3,7 +3,7 @@ namespace BitTorrent
     using System;
     using System.IO;
 
-    internal class Piece
+    public class Piece
     {
         private Torrent torrent;
 
@@ -11,7 +11,7 @@ namespace BitTorrent
 
         private int pieceNumber;
 
-        internal byte[] Bytes
+        public byte[] Bytes
         {
             get
             {
@@ -24,7 +24,7 @@ namespace BitTorrent
             }
         }
 
-        internal Torrent Torrent
+        public Torrent Torrent
         {
             get
             {
@@ -32,7 +32,7 @@ namespace BitTorrent
             }
         }
 
-        internal byte[] Hash
+        public byte[] Hash
         {
             get
             {
@@ -40,7 +40,7 @@ namespace BitTorrent
             }
         }
 
-        internal int PieceNumber
+        public int PieceNumber
         {
             get
             {
@@ -49,7 +49,7 @@ namespace BitTorrent
         }
 
 
-        internal Piece(Torrent parent, int pieceNumber)
+        public Piece(Torrent parent, int pieceNumber)
         {
             hash = new byte[20];
             this.pieceNumber = pieceNumber;

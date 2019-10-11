@@ -32,12 +32,12 @@ namespace BytesRoad.Net.Sockets.Advanced
     {
         protected bool inProgress = false;
         /*
-        internal AsyncBase()
+        public AsyncBase()
         {
         }
         */
         
-        virtual internal void SetProgress(bool progress)
+        virtual public void SetProgress(bool progress)
         {
             // prevent from nested calls
             lock(this)
@@ -55,7 +55,7 @@ namespace BytesRoad.Net.Sockets.Advanced
             }
         }
 
-        virtual internal void CheckProgress()
+        virtual public void CheckProgress()
         {
             lock(this)
             {
@@ -64,19 +64,19 @@ namespace BytesRoad.Net.Sockets.Advanced
             }
         }
 
-/*        virtual internal void HandleAsyncEnd(IAsyncResult ar, Type arType, bool turnProgressOff)
+/*        virtual public void HandleAsyncEnd(IAsyncResult ar, Type arType, bool turnProgressOff)
         {
             HandleAsyncEnd(ar, arType, null, turnProgressOff);
         }*/
 
-        static internal void VerifyAsyncResult(
+        static public void VerifyAsyncResult(
             IAsyncResult ar, 
             Type arType)
         {
             VerifyAsyncResult(ar, arType, null);
         }
 
-        static internal void VerifyAsyncResult(
+        static public void VerifyAsyncResult(
             IAsyncResult ar, 
             Type arType,
             string metName)
@@ -97,7 +97,7 @@ namespace BytesRoad.Net.Sockets.Advanced
                 throw new InvalidOperationException(metName + " was previously called for the asynchronous operation.");
         }
 
-        virtual internal void HandleAsyncEnd(IAsyncResult ar, bool turnProgressOff)
+        virtual public void HandleAsyncEnd(IAsyncResult ar, bool turnProgressOff)
         {
             if((false == ar.GetType().IsSubclassOf(typeof(AsyncResultBase))) &&
                 (false == ar.GetType().Equals(typeof(AsyncResultBase))))

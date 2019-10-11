@@ -5,7 +5,7 @@
 
     public static class StringExtensions
     {
-        internal static double ParseDouble(this string inputString, double defVal)
+        public static double ParseDouble(this string inputString, double defVal)
         {
             if (string.IsNullOrWhiteSpace(inputString))
             {
@@ -20,7 +20,7 @@
             return defVal;
         }
 
-        internal static int ParseValidInt(this string inputString, int defVal)
+        public static int ParseValidInt(this string inputString, int defVal)
         {
             int readValue;
             if (int.TryParse(inputString, out readValue))
@@ -30,7 +30,7 @@
             return defVal;
         }
 
-        internal static long ParseValidInt64(this string inputString, long defaultValue)
+        public static long ParseValidInt64(this string inputString, long defaultValue)
         {
             long readValue;
             if (long.TryParse(inputString, out readValue))
@@ -40,7 +40,7 @@
             return defaultValue;
         }
 
-        internal static float ParseValidFloat(this string inputString, float defaultValue)
+        public static float ParseValidFloat(this string inputString, float defaultValue)
         {
             if (string.IsNullOrWhiteSpace(inputString))
             {
@@ -55,7 +55,7 @@
             return defaultValue;
         }
 
-        internal static string GetValueDefault(this string inputString, string defaultValue)
+        public static string GetValueDefault(this string inputString, string defaultValue)
         {
             if (string.IsNullOrWhiteSpace(inputString))
             {

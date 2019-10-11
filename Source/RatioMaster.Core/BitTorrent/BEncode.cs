@@ -6,26 +6,26 @@ namespace BitTorrent
     using System.IO;
     using System.Text;
 
-    internal interface IBEncodeValue
+    public interface IBEncodeValue
     {
         byte[] Encode();
 
         void Parse(Stream p);
     }
 
-    internal class TorrentException : Exception
+    public class TorrentException : Exception
     {
-        internal TorrentException(string message)
+        public TorrentException(string message)
             : base(message)
         {
         }
     }
 
-    internal class ValueList : IBEncodeValue, IEnumerable, IEnumerator
+    public class ValueList : IBEncodeValue, IEnumerable, IEnumerator
     {
-        internal Collection<IBEncodeValue> values;
+        public Collection<IBEncodeValue> values;
 
-        internal int Position = -1;
+        public int Position = -1;
 
         public IEnumerator GetEnumerator()
         {
@@ -58,7 +58,7 @@ namespace BitTorrent
             }
         }
 
-        internal ValueList()
+        public ValueList()
         {
             values = new Collection<IBEncodeValue>();
         }
@@ -74,12 +74,12 @@ namespace BitTorrent
             }
         }
 
-        internal void Add(IBEncodeValue value)
+        public void Add(IBEncodeValue value)
         {
             values.Add(value);
         }
 
-        internal Collection<IBEncodeValue> Values
+        public Collection<IBEncodeValue> Values
         {
             get
             {
@@ -96,7 +96,7 @@ namespace BitTorrent
             }
         }
 
-        internal IBEncodeValue this[int index]
+        public IBEncodeValue this[int index]
         {
             get
             {
@@ -125,13 +125,13 @@ namespace BitTorrent
         }
     }
 
-    internal class ValueString : IBEncodeValue
+    public class ValueString : IBEncodeValue
     {
         private string v;
 
         private byte[] data;
 
-        internal int Length
+        public int Length
         {
             get
             {
@@ -139,7 +139,7 @@ namespace BitTorrent
             }
         }
 
-        internal byte[] Bytes
+        public byte[] Bytes
         {
             get
             {
@@ -147,7 +147,7 @@ namespace BitTorrent
             }
         }
 
-        internal string String
+        public string String
         {
             get
             {
@@ -172,12 +172,12 @@ namespace BitTorrent
             return newBytes;
         }
 
-        internal ValueString(string StringValue)
+        public ValueString(string StringValue)
         {
             String = StringValue;
         }
 
-        internal ValueString()
+        public ValueString()
         {
         }
 
@@ -206,13 +206,13 @@ namespace BitTorrent
         }
     }
 
-    internal class ValueNumber : IBEncodeValue
+    public class ValueNumber : IBEncodeValue
     {
         private string v;
 
         private byte[] data;
 
-        internal string String
+        public string String
         {
             get
             {
@@ -226,7 +226,7 @@ namespace BitTorrent
             }
         }
 
-        internal Int64 Integer
+        public Int64 Integer
         {
             get
             {
@@ -248,13 +248,13 @@ namespace BitTorrent
             return newByte;
         }
 
-        internal ValueNumber(Int64 number)
+        public ValueNumber(Int64 number)
         {
             v = number.ToString();
             String = v;
         }
 
-        internal ValueNumber()
+        public ValueNumber()
         {
         }
 
@@ -272,25 +272,25 @@ namespace BitTorrent
         }
     }
 
-    internal class BEncode
+    public class BEncode
     {
-        internal BEncode()
+        public BEncode()
         {
         }
 
-        internal static IBEncodeValue Parse(Stream d)
+        public static IBEncodeValue Parse(Stream d)
         {
             return Parse(d, (byte)d.ReadByte());
         }
 
-        internal static string String(IBEncodeValue v)
+        public static string String(IBEncodeValue v)
         {
             if (v is ValueString) return ((ValueString)v).String;
             else if (v is ValueNumber) return ((ValueNumber)v).String;
             else return null;
         }
 
-        internal static IBEncodeValue Parse(Stream d, byte firstByte)
+        public static IBEncodeValue Parse(Stream d, byte firstByte)
         {
             IBEncodeValue v;
             char first = (char)firstByte;

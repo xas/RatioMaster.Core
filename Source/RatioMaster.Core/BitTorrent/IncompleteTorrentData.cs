@@ -5,9 +5,9 @@
     using System.IO;
     using System.Security.Cryptography;
 
-    internal class IncompleteTorrentData : TorrentException
+    public class IncompleteTorrentData : TorrentException
     {
-        internal IncompleteTorrentData(string message)
+        public IncompleteTorrentData(string message)
             : base(message)
         {
         }

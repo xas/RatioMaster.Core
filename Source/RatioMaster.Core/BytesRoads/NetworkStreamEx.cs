@@ -80,7 +80,7 @@ namespace BytesRoad.Net.Sockets
             int _size = 0;
             byte[] _buffer = null;
 
-            internal Read_SO(
+            public Read_SO(
                 byte[] buffer,
                 int offset, 
                 int size, 
@@ -92,23 +92,23 @@ namespace BytesRoad.Net.Sockets
                 _size = size;
             }
 
-            internal int Read
+            public int Read
             {
                 get { return _read; }
                 set { _read = value; }
             }
 
-            internal int Offset
+            public int Offset
             {
                 get { return _offset; }
             }
 
-            internal int Size
+            public int Size
             {
                 get { return _size; }
             }
 
-            internal byte[] Buffer
+            public byte[] Buffer
             {
                 get { return _buffer; }
             }
@@ -121,7 +121,7 @@ namespace BytesRoad.Net.Sockets
             int _size = 0;
             byte[] _buffer = null;
 
-            internal Write_SO(
+            public Write_SO(
                 byte[] buffer,
                 int offset, 
                 int size, 
@@ -133,23 +133,23 @@ namespace BytesRoad.Net.Sockets
                 _size = size;
             }
 
-            internal int Sent
+            public int Sent
             {
                 get { return _sent; }
                 set { _sent = value; }
             }
 
-            internal int Offset
+            public int Offset
             {
                 get { return _offset; }
             }
 
-            internal int Size
+            public int Size
             {
                 get { return _size; }
             }
 
-            internal byte[] Buffer
+            public byte[] Buffer
             {
                 get { return _buffer; }
             }
@@ -1113,7 +1113,7 @@ namespace BytesRoad.Net.Sockets
         /// <see cref="BytesRoad.Net.Sockets.NetworkStreamEx"/>.
         /// </summary>
         /// <remarks>
-        /// Internally simply calls <see cref="BytesRoad.Net.Sockets.NetworkStreamEx.Dispose"/>, which
+        /// publicly simply calls <see cref="BytesRoad.Net.Sockets.NetworkStreamEx.Dispose"/>, which
         /// depending on the ownership of underlying <see cref="BytesRoad.Net.Sockets.SocketEx"/>
         /// will call <see cref="BytesRoad.Net.Sockets.SocketEx.Close"/> method.
         /// </remarks>

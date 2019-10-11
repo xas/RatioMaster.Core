@@ -2,19 +2,19 @@ namespace BitTorrent
 {
     using System.IO;
 
-    internal class TorrentFile
+    public class TorrentFile
     {
         private readonly FileInfo fileInfo;
 
-        internal TorrentFile(long len, string path) // : this()
+        public TorrentFile(long len, string path) // : this()
         {
             this.fileInfo = new FileInfo(path);
         }
 
-        internal long Length => this.fileInfo.Length;
+        public long Length => this.fileInfo.Length;
 
-        internal string Path => this.fileInfo.FullName;
+        public string Path => this.fileInfo.FullName;
 
-        internal string Name => this.fileInfo.Name;
+        public string Name => this.fileInfo.Name;
     }
 }

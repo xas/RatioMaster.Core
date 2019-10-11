@@ -33,18 +33,18 @@ namespace BytesRoad.Net.Sockets
     /// <summary>
     /// Summary description for Socket_HttpConnect.
     /// </summary>
-    internal class Socket_HttpConnect : SocketBase
+    public class Socket_HttpConnect : SocketBase
     {
         #region Async classes
         class Receive_SO : AsyncResultBase
         {
             int _read = 0;
 
-            internal Receive_SO(AsyncCallback cb, object state) : base(cb, state)
+            public Receive_SO(AsyncCallback cb, object state) : base(cb, state)
             {
             }
 
-            internal int Read
+            public int Read
             {
                 get { return _read; }
                 set { _read = value; }
@@ -57,7 +57,7 @@ namespace BytesRoad.Net.Sockets
             string _hostName;
             int _hostPort;
 
-            internal Connect_SO(
+            public Connect_SO(
                 string hostName,
                 int hostPort,
                 bool useCredentials, 
@@ -69,18 +69,18 @@ namespace BytesRoad.Net.Sockets
                 _hostPort = hostPort;
             }
 
-            internal bool UseCredentials
+            public bool UseCredentials
             {
                 get { return _useCredentials; }
                 set { _useCredentials = value; }
             }
 
-            internal string HostName
+            public string HostName
             {
                 get { return _hostName; }
             }
 
-            internal int HostPort
+            public int HostPort
             {
                 get { return _hostPort; }
             }
@@ -91,18 +91,18 @@ namespace BytesRoad.Net.Sockets
             byte[] _buffer = new byte[512];
             ByteVector _reply = new ByteVector();
 
-            internal ReadReply_SO(
+            public ReadReply_SO(
                 AsyncCallback cb, 
                 object state) : base(cb, state)
             {
             }
 
-            internal byte[] Buffer
+            public byte[] Buffer
             {
                 get { return _buffer; }
             }
 
-            internal ByteVector Reply
+            public ByteVector Reply
             {
                 get { return _reply; }
             }
@@ -119,7 +119,7 @@ namespace BytesRoad.Net.Sockets
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 
-        internal Socket_HttpConnect(
+        public Socket_HttpConnect(
             string proxyServer,
             int proxyPort,
             byte[] proxyUser, 
@@ -130,7 +130,7 @@ namespace BytesRoad.Net.Sockets
 
         #region Attributes
 
-        override internal int Available
+        override public int Available
         {
             get
             {
@@ -141,17 +141,17 @@ namespace BytesRoad.Net.Sockets
             }
         }
 
-        override internal ProxyType ProxyType 
+        override public ProxyType ProxyType 
         { 
             get { return ProxyType.HttpConnect; } 
         }
         
-        override internal EndPoint LocalEndPoint 
+        override public EndPoint LocalEndPoint 
         { 
             get { return null; } 
         } 
 
-        override internal EndPoint RemoteEndPoint 
+        override public EndPoint RemoteEndPoint 
         { 
             get { return _remoteEndPoint; } 
         }
@@ -415,7 +415,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Connect functions (overriden)
-        override internal void Connect(string hostName, int hostPort)
+        override public void Connect(string hostName, int hostPort)
         {
             CheckDisposed();
 
@@ -490,7 +490,7 @@ namespace BytesRoad.Net.Sockets
             }
         }
 
-        override internal void Connect(EndPoint remoteEP)
+        override public void Connect(EndPoint remoteEP)
         {
             if(null == remoteEP)
                 throw new ArgumentNullException("remoteEP", "The value cannot be null.");
@@ -501,7 +501,7 @@ namespace BytesRoad.Net.Sockets
             Connect(hostName, port);
         }
 
-        override internal IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state)
+        override public IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state)
         {
             if(null == remoteEP)
                 throw new ArgumentNullException("remoteEP", "The value cannot be null.");
@@ -512,7 +512,7 @@ namespace BytesRoad.Net.Sockets
             return BeginConnect(hostName, port, callback, state);
         }
 
-        internal override IAsyncResult BeginConnect(
+        public override IAsyncResult BeginConnect(
             string hostName, 
             int hostPort, 
             AsyncCallback callback, 
@@ -680,7 +680,7 @@ namespace BytesRoad.Net.Sockets
             }
         }
 
-        override internal void EndConnect(IAsyncResult asyncResult)
+        override public void EndConnect(IAsyncResult asyncResult)
         {
             VerifyAsyncResult(asyncResult, typeof(Connect_SO), "EndConnect");
             HandleAsyncEnd(asyncResult, true);
@@ -689,7 +689,7 @@ namespace BytesRoad.Net.Sockets
 
         #region Receive functions (override)
 
-        override internal int Receive(byte[] buffer)
+        override public int Receive(byte[] buffer)
         {
             CheckDisposed();
 
@@ -700,7 +700,7 @@ namespace BytesRoad.Net.Sockets
             return base.Receive(buffer);
         }
 
-        override internal int Receive(byte[] buffer, int size)
+        override public int Receive(byte[] buffer, int size)
         {
             CheckDisposed();
 
@@ -711,7 +711,7 @@ namespace BytesRoad.Net.Sockets
             return base.Receive(buffer, size);
         }
 
-        override internal int Receive(byte[] buffer, int offset, int size)
+        override public int Receive(byte[] buffer, int offset, int size)
         {
             CheckDisposed();
 
@@ -722,7 +722,7 @@ namespace BytesRoad.Net.Sockets
             return base.Receive(buffer, offset, size);
         }
 
-        override internal IAsyncResult BeginReceive(
+        override public IAsyncResult BeginReceive(
             byte[] buffer,
             int offset,
             int size,
@@ -768,7 +768,7 @@ namespace BytesRoad.Net.Sockets
             stateObj.SetCompleted();
         }
 
-        override internal int EndReceive(IAsyncResult asyncResult)
+        override public int EndReceive(IAsyncResult asyncResult)
         {
             VerifyAsyncResult(asyncResult, typeof(Receive_SO), "EndReceive");
             HandleAsyncEnd(asyncResult, false);
@@ -778,19 +778,19 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Accept functions (overriden) - not supported
-        override internal SocketBase Accept()
+        override public SocketBase Accept()
         {
             ThrowUnsupportException("Accept");
             return null;
         }
 
-        override internal IAsyncResult BeginAccept(AsyncCallback callback, object state)
+        override public IAsyncResult BeginAccept(AsyncCallback callback, object state)
         {
             ThrowUnsupportException("BeginAccept");
             return null;
         }
 
-        override internal SocketBase EndAccept(IAsyncResult asyncResult)
+        override public SocketBase EndAccept(IAsyncResult asyncResult)
         {
             ThrowUnsupportException("EndAccept");
             return null;
@@ -798,25 +798,25 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Bind functions (overriden) - not supported
-        override internal void Bind(SocketBase baseSocket)
+        override public void Bind(SocketBase baseSocket)
         {
             ThrowUnsupportException("Bind");
         }
 
-        override internal IAsyncResult BeginBind(SocketBase baseSocket, AsyncCallback callback, object state)
+        override public IAsyncResult BeginBind(SocketBase baseSocket, AsyncCallback callback, object state)
         {
             ThrowUnsupportException("BeginBind");
             return null;
         }
 
-        override internal void EndBind(IAsyncResult ar)
+        override public void EndBind(IAsyncResult ar)
         {
             ThrowUnsupportException("EndBind");
         }
         #endregion
 
         #region Listen function (overriden) - not supported
-        override internal void Listen(int backlog)
+        override public void Listen(int backlog)
         {
             ThrowUnsupportException("Listen");
         }
