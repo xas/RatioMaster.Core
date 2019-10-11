@@ -44,25 +44,25 @@ namespace BytesRoad.Net.Sockets.Advanced
 
 
 
-        internal AsyncResultBase(AsyncCallback cb, object callerState)
+        public AsyncResultBase(AsyncCallback cb, object callerState)
         {
             _callback = cb;
             _callerState = callerState;
             _startThreadId = Thread.CurrentThread.GetHashCode();
         }
 
-        internal void UpdateContext()
+        public void UpdateContext()
         {
             if(Thread.CurrentThread.GetHashCode() != _startThreadId)
                 _completedSync = false;
         }
 
-        /*internal void SetCompleted(bool completedSync)
+        /*public void SetCompleted(bool completedSync)
         {
             SetCompleted();
         }*/
 
-        internal void SetCompleted()
+        public void SetCompleted()
         {
             lock(this)  // sync with 'AsyncWaitHandle' property
             {
@@ -124,23 +124,23 @@ namespace BytesRoad.Net.Sockets.Advanced
 
 
         #region Attributes
-        virtual internal string ActivityName 
+        virtual public string ActivityName 
         { 
             get { return GetType().FullName; } 
         }
 
-        internal AsyncCallback CallBack
+        public AsyncCallback CallBack
         {
             get { return _callback; }
         }
 
-        internal Exception Exception
+        public Exception Exception
         {
             get { return _exception; }
             set { _exception = value; }
         }
 
-        internal virtual bool IsHandled
+        public virtual bool IsHandled
         {
             get { return _isHandled; }
 

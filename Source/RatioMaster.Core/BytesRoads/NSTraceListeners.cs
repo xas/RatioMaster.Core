@@ -45,7 +45,7 @@ namespace BytesRoad.Diag
     {
         ArrayList _listeners = new ArrayList();
 
-        internal NSTraceListeners()
+        public NSTraceListeners()
         {
         }
 

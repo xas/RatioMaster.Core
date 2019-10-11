@@ -111,7 +111,7 @@ namespace BytesRoad.Diag
             get { return NSTraceOptions.Listeners; }
         }
 
-        internal static void FlushIfNeeded()
+        public static void FlushIfNeeded()
         {
             if(AutoFlush)
                 Flush();

@@ -5,7 +5,7 @@ namespace BitTorrent
     using System.IO;
     using System.Security.Cryptography;
 
-    internal class Torrent
+    public class Torrent
     {
         // if the torrent is multiple files, an array of them
         private Collection<TorrentFile> torrentFiles;
@@ -24,7 +24,7 @@ namespace BitTorrent
 
         private ulong _totalLength; // total length of all files in torrent
 
-        internal Collection<TorrentFile> PhysicalFiles
+        public Collection<TorrentFile> PhysicalFiles
         {
             get
             {
@@ -32,20 +32,20 @@ namespace BitTorrent
             }
         }
 
-        internal Torrent()
+        public Torrent()
         {
             data = new ValueDictionary();
             localTorrentFile = String.Empty;
             torrentFiles = new Collection<TorrentFile>();
         }
 
-        internal Torrent(string localFilename)
+        public Torrent(string localFilename)
         {
             torrentFiles = new Collection<TorrentFile>();
             OpenTorrent(localFilename);
         }
 
-        internal ulong totalLength
+        public ulong totalLength
         {
             get
             {
@@ -53,7 +53,7 @@ namespace BitTorrent
             }
         }
 
-        internal bool SingleFile
+        public bool SingleFile
         {
             get
             {
@@ -61,7 +61,7 @@ namespace BitTorrent
             }
         }
 
-        internal ValueDictionary Data
+        public ValueDictionary Data
         {
             get
             {
@@ -69,7 +69,7 @@ namespace BitTorrent
             }
         }
 
-        internal ValueDictionary Info
+        public ValueDictionary Info
         {
             get
             {
@@ -77,7 +77,7 @@ namespace BitTorrent
             }
         }
 
-        internal byte[] InfoHash
+        public byte[] InfoHash
         {
             get
             {
@@ -86,7 +86,7 @@ namespace BitTorrent
             }
         }
 
-        internal string Name
+        public string Name
         {
             get
             {
@@ -102,7 +102,7 @@ namespace BitTorrent
             }
         }
 
-        internal string Comment
+        public string Comment
         {
             get
             {
@@ -115,7 +115,7 @@ namespace BitTorrent
             }
         }
 
-        internal string Announce
+        public string Announce
         {
             get
             {
@@ -128,7 +128,7 @@ namespace BitTorrent
             }
         }
 
-        internal string CreatedBy
+        public string CreatedBy
         {
             get
             {
@@ -141,7 +141,7 @@ namespace BitTorrent
             }
         }
 
-        internal bool OpenTorrent(string localFilename)
+        public bool OpenTorrent(string localFilename)
         {
             data = null; // clear any old data
             bool hasOpened = false;
@@ -192,7 +192,7 @@ namespace BitTorrent
             }
         }
 
-        internal int Pieces
+        public int Pieces
         {
             get
             {
@@ -204,7 +204,7 @@ namespace BitTorrent
         {
             if (data.Contains("announce") == false) throw new IncompleteTorrentData("No tracker URL");
 
-            if (data.Contains("info") == false) throw new IncompleteTorrentData("No internal torrent information");
+            if (data.Contains("info") == false) throw new IncompleteTorrentData("No public torrent information");
 
             ValueDictionary info = (ValueDictionary)data["info"];
             pieceLength = ((ValueNumber)info["piece length"]).Integer;

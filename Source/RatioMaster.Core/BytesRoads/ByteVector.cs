@@ -28,29 +28,29 @@ namespace BytesRoad.Net.Sockets
     /// <summary>
     /// Summary description for ByteVector.
     /// </summary>
-    internal class ByteVector
+    public class ByteVector
     {
         byte[] _data = new byte[0];
         int _capacity = 0;
         int _size = 0;
         /*
-        internal ByteVector()
+        public ByteVector()
         {
         }
         */
 
         #region Attributes
-        internal byte[] Data
+        public byte[] Data
         {
             get { return _data; }
         }
 
-        internal int Size
+        public int Size
         {
             get { return _size; }
         }
 
-        internal int Capacity
+        public int Capacity
         {
             get { return _capacity; }
         }
@@ -75,14 +75,14 @@ namespace BytesRoad.Net.Sockets
                 Reallocate(_size + needMore);
         }
 
-        internal void Add(byte[] data)
+        public void Add(byte[] data)
         {
             EnsureSpace(data.Length);
             Array.Copy(data, 0, _data, _size, data.Length);
             _size += data.Length;
         }
 
-        internal void Add(
+        public void Add(
             byte[] data,
             int offset)
         {
@@ -92,19 +92,19 @@ namespace BytesRoad.Net.Sockets
             _size += copyNum;
         }
 
-        internal void Add(byte[] data, int offset, int length)
+        public void Add(byte[] data, int offset, int length)
         {
             EnsureSpace(length);
             Array.Copy(data, offset, _data, _size, length);
             _size += length;
         }
 
-        internal void Add(ByteVector data)
+        public void Add(ByteVector data)
         {
             Add(data.Data, 0, data.Size);
         }
 
-        internal void CutTail(int count)
+        public void CutTail(int count)
         {
             if(count < 0)
                 throw new ArgumentException("Should be a positive value", "count");
@@ -115,7 +115,7 @@ namespace BytesRoad.Net.Sockets
                 _size -= count;
         }
 
-        internal void CutHead(int count)
+        public void CutHead(int count)
         {
             if(count < 0)
                 throw new ArgumentException("Should be a positive value", "count");
@@ -131,7 +131,7 @@ namespace BytesRoad.Net.Sockets
             }
         }
 
-        internal void Clear()
+        public void Clear()
         {
             _size = 0;
         }

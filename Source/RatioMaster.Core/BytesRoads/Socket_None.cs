@@ -31,12 +31,12 @@ namespace BytesRoad.Net.Sockets
     /// <summary>
     /// Summary description for Socket_None.
     /// </summary>
-    internal class Socket_None : SocketBase
+    public class Socket_None : SocketBase
     {
         #region Async classes
         class Bind_SO : AsyncResultBase
         {
-            internal Bind_SO(AsyncCallback cb, object state) : base(cb, state)
+            public Bind_SO(AsyncCallback cb, object state) : base(cb, state)
             {
             }
         }
@@ -45,36 +45,36 @@ namespace BytesRoad.Net.Sockets
         {
             int _port;
 
-            internal Connect_SO(int port, AsyncCallback cb, object state) : base(cb, state)
+            public Connect_SO(int port, AsyncCallback cb, object state) : base(cb, state)
             {
                 _port = port;
             }
 
-            internal int Port { get { return _port;} }
+            public int Port { get { return _port;} }
         }
         #endregion
 
-        internal Socket_None()
+        public Socket_None()
         {
         }
 
-        internal Socket_None(Socket systemSocket) : base(systemSocket)
+        public Socket_None(Socket systemSocket) : base(systemSocket)
         {
         }
 
         #region Attributes
 
-        override internal ProxyType ProxyType
+        override public ProxyType ProxyType
         {
             get { return ProxyType.None; }
         }
         
-        override internal EndPoint LocalEndPoint 
+        override public EndPoint LocalEndPoint 
         {
             get { return _socket.LocalEndPoint; } 
         } 
 
-        override internal EndPoint RemoteEndPoint 
+        override public EndPoint RemoteEndPoint 
         { 
             get { return _socket.RemoteEndPoint; } 
         }
@@ -86,19 +86,19 @@ namespace BytesRoad.Net.Sockets
 
         #region Accept functions (overriden)
 
-        override internal SocketBase Accept()
+        override public SocketBase Accept()
         {
             CheckDisposed();
             return new Socket_None(_socket.Accept());
         }
 
-        override internal IAsyncResult BeginAccept(AsyncCallback callback, object state)
+        override public IAsyncResult BeginAccept(AsyncCallback callback, object state)
         {
             CheckDisposed();
             return _socket.BeginAccept(callback, state);
         }
 
-        override internal SocketBase EndAccept(IAsyncResult asyncResult)
+        override public SocketBase EndAccept(IAsyncResult asyncResult)
         {
             return new Socket_None(_socket.EndAccept(asyncResult));
         }
@@ -106,13 +106,13 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Connect functions (overriden)
-        override internal void Connect(EndPoint remoteEP)
+        override public void Connect(EndPoint remoteEP)
         {
             CheckDisposed();
             _socket.Connect(remoteEP);
         }
 
-        override internal IAsyncResult BeginConnect(
+        override public IAsyncResult BeginConnect(
             EndPoint remoteEP, 
             AsyncCallback callback, 
             object state)
@@ -138,7 +138,7 @@ namespace BytesRoad.Net.Sockets
             return stateObj;
         }
 
-        override internal IAsyncResult BeginConnect(
+        override public IAsyncResult BeginConnect(
             string hostName, 
             int port, 
             AsyncCallback callback, 
@@ -202,7 +202,7 @@ namespace BytesRoad.Net.Sockets
             stateObj.SetCompleted();
         }
 
-        override internal void EndConnect(IAsyncResult asyncResult)
+        override public void EndConnect(IAsyncResult asyncResult)
         {
             VerifyAsyncResult(asyncResult, typeof(Connect_SO), "EndConnect");
             HandleAsyncEnd(asyncResult, true);
@@ -210,7 +210,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Bind functions (overriden)
-        override internal void Bind(SocketBase baseSocket)
+        override public void Bind(SocketBase baseSocket)
         {
             CheckDisposed();
             IPEndPoint ep = (IPEndPoint)baseSocket.SystemSocket.LocalEndPoint;
@@ -218,7 +218,7 @@ namespace BytesRoad.Net.Sockets
             _socket.Bind(ep);
         }
 
-        override internal IAsyncResult BeginBind(
+        override public IAsyncResult BeginBind(
             SocketBase baseSocket, 
             AsyncCallback callback, 
             object state)
@@ -240,7 +240,7 @@ namespace BytesRoad.Net.Sockets
             return stateObj;
         }
 
-        override internal void EndBind(IAsyncResult ar)
+        override public void EndBind(IAsyncResult ar)
         {
             VerifyAsyncResult(ar, typeof(Bind_SO), "EndBind");
             HandleAsyncEnd(ar, false);
@@ -248,7 +248,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Listen function (overriden)
-        override internal void Listen(int backlog)
+        override public void Listen(int backlog)
         {
             CheckDisposed();
             _socket.Listen(backlog);

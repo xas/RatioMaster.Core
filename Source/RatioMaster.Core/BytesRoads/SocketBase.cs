@@ -77,12 +77,12 @@ namespace BytesRoad.Net.Sockets
 
         #region Attributes
 
-        virtual internal int Available
+        virtual public int Available
         {
             get { return _socket.Available; }
         }
 
-        internal bool Connected
+        public bool Connected
         {
             get { return _socket.Connected; }
         }
@@ -97,27 +97,27 @@ namespace BytesRoad.Net.Sockets
             }
         }
 
-        internal Socket SystemSocket
+        public Socket SystemSocket
         {
             get { return _socket; }
         }
 
-        internal bool PreAuthenticate
+        public bool PreAuthenticate
         {
             get { return _preAuthenticate; }
             set { _preAuthenticate = value; }
         }
 
-        abstract internal ProxyType ProxyType { get; }
+        abstract public ProxyType ProxyType { get; }
 
-        abstract internal EndPoint LocalEndPoint { get; } 
+        abstract public EndPoint LocalEndPoint { get; } 
 
-        abstract internal EndPoint RemoteEndPoint { get; }
+        abstract public EndPoint RemoteEndPoint { get; }
 
         #endregion
 
         #region DNS helpers
-        static internal IPHostEntry GetHostByName(string hostName)
+        static public IPHostEntry GetHostByName(string hostName)
         {
             IPHostEntry host = null;
             try
@@ -132,12 +132,12 @@ namespace BytesRoad.Net.Sockets
             return host;
         }
 
-        static internal IAsyncResult BeginGetHostByName(string hostName, AsyncCallback cb, object state)
+        static public IAsyncResult BeginGetHostByName(string hostName, AsyncCallback cb, object state)
         {
             return Dns.BeginGetHostEntry(hostName, cb, state);
         }
 
-        static internal IPHostEntry EndGetHostByName(IAsyncResult ar)
+        static public IPHostEntry EndGetHostByName(IAsyncResult ar)
         {
             IPHostEntry host = null;
             try
@@ -154,7 +154,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Helpers
-        static internal IPEndPoint ConstructEndPoint(IPHostEntry host, int port)
+        static public IPEndPoint ConstructEndPoint(IPHostEntry host, int port)
         {
             if(0 >= host.AddressList.Length)
             {
@@ -179,15 +179,15 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Accept functions (abstract)
-        abstract internal SocketBase Accept();
+        abstract public SocketBase Accept();
 
-        abstract internal IAsyncResult BeginAccept(AsyncCallback callback, object state);
+        abstract public IAsyncResult BeginAccept(AsyncCallback callback, object state);
 
-        abstract internal SocketBase EndAccept(IAsyncResult asyncResult);
+        abstract public SocketBase EndAccept(IAsyncResult asyncResult);
         #endregion
 
         #region Connect functions (virtual and abstract)
-        virtual internal void Connect(string hostName, int port)
+        virtual public void Connect(string hostName, int port)
         {
 
             CheckDisposed();
@@ -207,29 +207,29 @@ namespace BytesRoad.Net.Sockets
             NSTrace.WriteLineInfo("S: Connection established.");
         }
 
-        abstract internal void Connect(EndPoint remoteEP);
+        abstract public void Connect(EndPoint remoteEP);
 
-        abstract internal IAsyncResult BeginConnect(string hostName, int port, AsyncCallback callback, object state);
+        abstract public IAsyncResult BeginConnect(string hostName, int port, AsyncCallback callback, object state);
 
-        abstract internal IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state);
+        abstract public IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state);
 
-        abstract internal void EndConnect(IAsyncResult asyncResult);
+        abstract public void EndConnect(IAsyncResult asyncResult);
         #endregion
 
         #region Bind functions (abstract)
-        abstract internal void Bind(SocketBase socket);
+        abstract public void Bind(SocketBase socket);
 
-        abstract internal IAsyncResult BeginBind(SocketBase socket, AsyncCallback callback, object state);
+        abstract public IAsyncResult BeginBind(SocketBase socket, AsyncCallback callback, object state);
 
-        abstract internal void EndBind(IAsyncResult ar); 
+        abstract public void EndBind(IAsyncResult ar); 
         #endregion
 
         #region Listen function (abstract)
-        abstract internal void Listen(int backlog);
+        abstract public void Listen(int backlog);
         #endregion
 
         #region Shutdown function (virtual)
-        virtual internal void Shutdown(SocketShutdown how)
+        virtual public void Shutdown(SocketShutdown how)
         {
             CheckDisposed();
             _socket.Shutdown(how);
@@ -237,25 +237,25 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Receive functions (virtual)
-        virtual internal int Receive(byte[] buffer)
+        virtual public int Receive(byte[] buffer)
         {
             CheckDisposed();
             return _socket.Receive(buffer);
         }
 
-        virtual internal int Receive(byte[] buffer, int size)
+        virtual public int Receive(byte[] buffer, int size)
         {
             CheckDisposed();
             return _socket.Receive(buffer, size, SocketFlags.None);
         }
 
-        virtual internal int Receive(byte[] buffer, int offset, int size)
+        virtual public int Receive(byte[] buffer, int offset, int size)
         {
             CheckDisposed();
             return _socket.Receive(buffer, offset, size, SocketFlags.None);
         }
 
-        virtual internal IAsyncResult BeginReceive(
+        virtual public IAsyncResult BeginReceive(
             byte[] buffer,
             int offset,
             int size,
@@ -267,7 +267,7 @@ namespace BytesRoad.Net.Sockets
             return _socket.BeginReceive(buffer, offset, size, SocketFlags.None, callback, state);
         }
 
-        virtual internal int EndReceive(IAsyncResult asyncResult)
+        virtual public int EndReceive(IAsyncResult asyncResult)
         {
             return _socket.EndReceive(asyncResult);
         }
@@ -275,25 +275,25 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Send functions (virtual)
-        virtual internal int Send(byte[] buffer)
+        virtual public int Send(byte[] buffer)
         {
             CheckDisposed();
             return _socket.Send(buffer);
         }
 
-        virtual internal int Send(byte[] buffer, int size)
+        virtual public int Send(byte[] buffer, int size)
         {
             CheckDisposed();
             return _socket.Send(buffer, size, SocketFlags.None);
         }
 
-        virtual internal int Send(byte[] buffer, int offset, int size)
+        virtual public int Send(byte[] buffer, int offset, int size)
         {
             CheckDisposed();
             return _socket.Send(buffer, offset, size, SocketFlags.None);
         }
 
-        virtual internal IAsyncResult BeginSend(
+        virtual public IAsyncResult BeginSend(
             byte[] buffer,
             int offset,
             int size,
@@ -306,7 +306,7 @@ namespace BytesRoad.Net.Sockets
                 SocketFlags.None, callback, state);
         }
 
-        virtual internal int EndSend(IAsyncResult asyncResult)
+        virtual public int EndSend(IAsyncResult asyncResult)
         {
             return _socket.EndSend(asyncResult);
         }
@@ -314,7 +314,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region SetSocketOption functions (virtual)
-        virtual internal void SetSocketOption(
+        virtual public void SetSocketOption(
             SocketOptionLevel optionLevel,
             SocketOptionName optionName,
             byte[] optionValue
@@ -325,7 +325,7 @@ namespace BytesRoad.Net.Sockets
         }
 
 
-        virtual internal void SetSocketOption(
+        virtual public void SetSocketOption(
             SocketOptionLevel optionLevel,
             SocketOptionName optionName,
             int optionValue
@@ -335,7 +335,7 @@ namespace BytesRoad.Net.Sockets
             _socket.SetSocketOption(optionLevel, optionName, optionValue);
         }
 
-        virtual internal void SetSocketOption(
+        virtual public void SetSocketOption(
             SocketOptionLevel optionLevel,
             SocketOptionName optionName,
             object optionValue
@@ -353,7 +353,7 @@ namespace BytesRoad.Net.Sockets
             Dispose(false);
         }
 
-        internal void Close()
+        public void Close()
         {
             Dispose();
         }

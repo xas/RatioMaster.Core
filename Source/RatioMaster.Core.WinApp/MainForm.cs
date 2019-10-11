@@ -283,11 +283,6 @@ namespace RatioMaster.Core
             Process.Start(Links.AuthorPage);
         }
 
-        private void jOINToOurForumPleaseToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Process.Start(Links.PayPal);
-        }
-
         private void lblCodedBy_Click(object sender, EventArgs e)
         {
             Process.Start(Links.AuthorPage);

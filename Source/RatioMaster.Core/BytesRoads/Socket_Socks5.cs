@@ -29,14 +29,14 @@ using BytesRoad.Net.Sockets.Advanced;
 
 namespace BytesRoad.Net.Sockets
 {
-    internal enum AuthMethod
+    public enum AuthMethod
     {
         None,
         UsernamePassword,
         NoAcceptable
     }
 
-    internal enum ATYP
+    public enum ATYP
     {
         IPv4 = 1,
         DomName = 3,
@@ -46,7 +46,7 @@ namespace BytesRoad.Net.Sockets
     /// <summary>
     /// Summary description for Socket_Socks5.
     /// </summary>
-    internal class Socket_Socks5 : SocketBase
+    public class Socket_Socks5 : SocketBase
     {
         #region Async classes
         class ReadVerifyReply_SO : AsyncResultBase
@@ -54,17 +54,17 @@ namespace BytesRoad.Net.Sockets
             byte[] _phase1Data = new byte[5];
             byte[] _reply = null;
 
-            internal ReadVerifyReply_SO(AsyncCallback cb, object state)
+            public ReadVerifyReply_SO(AsyncCallback cb, object state)
                 : base(cb, state)
             {
             }
 
-            internal byte[] Phase1Data
+            public byte[] Phase1Data
             {
                 get { return _phase1Data; }
             }
 
-            internal byte[] Reply
+            public byte[] Reply
             {
                 get { return _reply; }
                 set { _reply = value; }
@@ -75,12 +75,12 @@ namespace BytesRoad.Net.Sockets
         {
             byte[] _reply = new byte[2];
 
-            internal UsernamePassword_SO(AsyncCallback cb, object state)
+            public UsernamePassword_SO(AsyncCallback cb, object state)
                 : base(cb, state)
             {
             }
 
-            internal byte[] Reply
+            public byte[] Reply
             {
                 get { return _reply; }
             }
@@ -88,7 +88,7 @@ namespace BytesRoad.Net.Sockets
 
         class DoAuthentication_SO : AsyncResultBase
         {
-            internal DoAuthentication_SO(AsyncCallback cb, object state)
+            public DoAuthentication_SO(AsyncCallback cb, object state)
                 : base(cb, state)
             {
             }
@@ -101,7 +101,7 @@ namespace BytesRoad.Net.Sockets
             int _size;
             int _read = 0;
 
-            internal ReadWhole_SO(
+            public ReadWhole_SO(
                 byte[] buffer,
                 int offset,
                 int size,
@@ -114,23 +114,23 @@ namespace BytesRoad.Net.Sockets
                 _size = size;
             }
 
-            internal byte[] Buffer
+            public byte[] Buffer
             {
                 get { return _buffer; }
             }
 
-            internal int Read 
+            public int Read 
             {
                 get { return _read; }
                 set { _read = value; }
             }
 
-            internal int Size
+            public int Size
             {
                 get { return _size; }
             }
 
-            internal int Offset 
+            public int Offset 
             {
                 get { return _offset; }
             }
@@ -141,7 +141,7 @@ namespace BytesRoad.Net.Sockets
             byte[] _reply = new byte[2];
             bool _useCredentials;
 
-            internal Negotiation_SO(
+            public Negotiation_SO(
                 bool useCredentials,
                 AsyncCallback cb, 
                 object state) : base(cb, state)
@@ -149,12 +149,12 @@ namespace BytesRoad.Net.Sockets
                 _useCredentials = useCredentials;
             }
 
-            internal byte[] Reply
+            public byte[] Reply
             {
                 get { return _reply; }
             }
 
-            internal bool UseCredentials
+            public bool UseCredentials
             {
                 get { return _useCredentials; }
                 set { _useCredentials = value; }
@@ -168,7 +168,7 @@ namespace BytesRoad.Net.Sockets
             int _hostPort = -1;
             string _hostName = null;
 
-            internal Connect_SO(
+            public Connect_SO(
                 EndPoint remoteEndPoint,
                 string hostName,
                 int hostPort,
@@ -180,23 +180,23 @@ namespace BytesRoad.Net.Sockets
                 _hostName = hostName;
             }
 
-            internal int HostPort
+            public int HostPort
             {
                 get { return _hostPort; }
             }
 
-            internal string HostName
+            public string HostName
             {
                 get { return _hostName; }
             }
 
-            internal EndPoint RemoteEndPoint
+            public EndPoint RemoteEndPoint
             {
                 get { return _remoteEndPoint; }
                 set { _remoteEndPoint = value; }
             }
 
-            internal int ReadBytes
+            public int ReadBytes
             {
                 get { return _readBytes; }
                 set { _readBytes = value; }
@@ -209,7 +209,7 @@ namespace BytesRoad.Net.Sockets
             int _readBytes = 0;
             IPAddress _proxyIP = null;
 
-            internal Bind_SO(
+            public Bind_SO(
                 Socket_Socks5 baseSocket,
                 AsyncCallback cb, 
                 object state) : base(cb, state)
@@ -217,18 +217,18 @@ namespace BytesRoad.Net.Sockets
                 _baseSocket = baseSocket;
             }
 
-            internal Socket_Socks5 BaseSocket
+            public Socket_Socks5 BaseSocket
             {
                 get { return _baseSocket; }
             }
 
-            internal int ReadBytes
+            public int ReadBytes
             {
                 get { return _readBytes; }
                 set { _readBytes = value; }
             }
 
-            internal IPAddress ProxyIP
+            public IPAddress ProxyIP
             {
                 get { return _proxyIP; }
                 set { _proxyIP = value; }
@@ -239,13 +239,13 @@ namespace BytesRoad.Net.Sockets
         {
             int _readBytes = 0;
 
-            internal Accept_SO(
+            public Accept_SO(
                 AsyncCallback cb, 
                 object state) : base(cb, state)
             {
             }
 
-            internal int ReadBytes
+            public int ReadBytes
             {
                 get { return _readBytes; }
                 set { _readBytes = value; }
@@ -265,7 +265,7 @@ namespace BytesRoad.Net.Sockets
         EndPoint _localEndPoint = null;
         EndPoint _remoteEndPoint = null;
 
-        internal Socket_Socks5(
+        public Socket_Socks5(
             string proxyServer,
             int proxyPort,
             byte[] proxyUser,
@@ -275,17 +275,17 @@ namespace BytesRoad.Net.Sockets
     }
 
         #region Attributes
-        override internal ProxyType ProxyType 
+        override public ProxyType ProxyType 
         { 
             get { return ProxyType.Socks5; } 
         }
 
-        override internal EndPoint LocalEndPoint 
+        override public EndPoint LocalEndPoint 
         { 
             get { return _localEndPoint; } 
         }
 
-        override internal EndPoint RemoteEndPoint 
+        override public EndPoint RemoteEndPoint 
         { 
             get { return _remoteEndPoint; } 
         }
@@ -1057,7 +1057,7 @@ namespace BytesRoad.Net.Sockets
 
         #region Accept functions (overriden)
 
-        override internal SocketBase Accept()
+        override public SocketBase Accept()
         {
             CheckDisposed();
             SetProgress(true);
@@ -1074,7 +1074,7 @@ namespace BytesRoad.Net.Sockets
             return this;
         }
 
-        override internal IAsyncResult BeginAccept(
+        override public IAsyncResult BeginAccept(
             AsyncCallback callback, 
             object state)
         {
@@ -1117,7 +1117,7 @@ namespace BytesRoad.Net.Sockets
             stateObj.SetCompleted();
         }
 
-        override internal SocketBase EndAccept(IAsyncResult asyncResult)
+        override public SocketBase EndAccept(IAsyncResult asyncResult)
         {
             VerifyAsyncResult(asyncResult, typeof(Accept_SO), "EndAccept");
             HandleAsyncEnd(asyncResult, true);
@@ -1127,7 +1127,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Connect functions (overriden)
-        override internal void Connect(string hostName, int hostPort)
+        override public void Connect(string hostName, int hostPort)
         {
             if(null == hostName)
                 throw new ArgumentNullException("hostName", "The value cannot be null.");
@@ -1138,7 +1138,7 @@ namespace BytesRoad.Net.Sockets
             Connect(null, hostName, hostPort);
         }
 
-        override internal void Connect(EndPoint remoteEP)
+        override public void Connect(EndPoint remoteEP)
         {
             if(null == remoteEP)
                 throw new ArgumentNullException("remoteEP", "The value cannot be null.");
@@ -1214,7 +1214,7 @@ namespace BytesRoad.Net.Sockets
             }
         }
     
-        override internal IAsyncResult BeginConnect(
+        override public IAsyncResult BeginConnect(
             string hostName,
             int hostPort, 
             AsyncCallback callback,
@@ -1287,7 +1287,7 @@ namespace BytesRoad.Net.Sockets
             }
         }
 
-        override internal IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state)
+        override public IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state)
         {
             CheckDisposed();
             if(null == remoteEP)
@@ -1442,7 +1442,7 @@ namespace BytesRoad.Net.Sockets
             stateObj.SetCompleted();
         }
 
-        override internal void EndConnect(IAsyncResult asyncResult)
+        override public void EndConnect(IAsyncResult asyncResult)
         {
             VerifyAsyncResult(asyncResult, typeof(Connect_SO), "EndConnect");
             HandleAsyncEnd(asyncResult, true);
@@ -1450,7 +1450,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Bind functions (overriden)
-        override internal void Bind(SocketBase socket)
+        override public void Bind(SocketBase socket)
         {
             CheckDisposed();
             SetProgress(true);
@@ -1497,7 +1497,7 @@ namespace BytesRoad.Net.Sockets
         }
 
 
-        override internal IAsyncResult BeginBind(
+        override public IAsyncResult BeginBind(
             SocketBase baseSocket, 
             AsyncCallback callback, 
             object state)
@@ -1645,7 +1645,7 @@ namespace BytesRoad.Net.Sockets
             stateObj.SetCompleted();
         }
 
-        override internal void EndBind(IAsyncResult asyncResult)
+        override public void EndBind(IAsyncResult asyncResult)
         {
             VerifyAsyncResult(asyncResult, typeof(Bind_SO), "EndBind");
             HandleAsyncEnd(asyncResult, true);
@@ -1654,7 +1654,7 @@ namespace BytesRoad.Net.Sockets
         #endregion
 
         #region Listen functions (overriden)
-        override internal void Listen(int backlog)
+        override public void Listen(int backlog)
         {
             CheckDisposed();
             if(null == _localEndPoint)

@@ -94,51 +94,51 @@ namespace BytesRoad.Net.Sockets
     }
 
     #region Commented exceptions
-    /*    internal class HostNotFoundException : Exception
+    /*    public class HostNotFoundException : Exception
         {
-            internal HostNotFoundException(string message) : base(message)
+            public HostNotFoundException(string message) : base(message)
             {
             }
         }
 
-        internal class SocketTimeoutException : Exception
+        public class SocketTimeoutException : Exception
         {
-            internal SocketTimeoutException()
+            public SocketTimeoutException()
             {
             }
 
-            internal SocketTimeoutException(string message) : base(message)
+            public SocketTimeoutException(string message) : base(message)
             {
             }
 
-            internal SocketTimeoutException(string message, 
+            public SocketTimeoutException(string message, 
                 Exception innerEx) : base(message, innerEx)
             {
             }
         }
 
-        internal class ProxyErrorException : Exception
+        public class ProxyErrorException : Exception
         {
             int _code;
-            internal ProxyErrorException(string message) : base (message)
+            public ProxyErrorException(string message) : base (message)
             {
             }
 
-            internal ProxyErrorException(string message, int code) : base (message)
+            public ProxyErrorException(string message, int code) : base (message)
             {
                 _code = code;
             }
         }
 
-        internal class AuthFailedException : ProxyErrorException
+        public class AuthFailedException : ProxyErrorException
         {
-            internal AuthFailedException(string message) : base(message)
+            public AuthFailedException(string message) : base(message)
             {
             }
         }*/
     #endregion
 
-    internal enum OpState
+    public enum OpState
     {
         Working,
         Timedout,
@@ -146,13 +146,13 @@ namespace BytesRoad.Net.Sockets
     }
 ;
 
-    internal abstract class IOp
+    public abstract class IOp
     {
-        abstract internal object Execute();
+        abstract public object Execute();
 
-        abstract internal object BeginExecute(AsyncCallback cb, object state);
+        abstract public object BeginExecute(AsyncCallback cb, object state);
 
-        abstract internal object EndExecute(IAsyncResult ar);
+        abstract public object EndExecute(IAsyncResult ar);
     }
 
     /// <summary>
@@ -317,7 +317,7 @@ namespace BytesRoad.Net.Sockets
         /// Used in Accept methods
         /// </summary>
         /// <param name="baseSocket"></param>
-        internal SocketEx(SocketBase baseSocket)
+        public SocketEx(SocketBase baseSocket)
         {
             NSTrace.WriteLineVerbose("-> SocketEx(handle)");
             if(null == baseSocket)
@@ -352,7 +352,7 @@ namespace BytesRoad.Net.Sockets
         /// Gets the amount of data that has been received from the network and is available to be read.
         /// </summary>
         /// <value>
-        /// The number of bytes queued in the the internal network buffer and available for reading.
+        /// The number of bytes queued in the the public network buffer and available for reading.
         /// </value>
         /// <exception cref="System.ObjectDisposedException">
         /// The <see cref="BytesRoad.Net.Sockets.SocketEx"/> object was disposed.
@@ -668,7 +668,7 @@ namespace BytesRoad.Net.Sockets
                 return val; 
         }
 
-        internal void SetTimeout(int timeout)
+        public void SetTimeout(int timeout)
         {
             ConnectTimeout = timeout;
             AcceptTimeout = timeout;
@@ -676,12 +676,12 @@ namespace BytesRoad.Net.Sockets
             SendTimeout = timeout;
         }
 
-        internal void SetReceiveTimeout(int timeout)
+        public void SetReceiveTimeout(int timeout)
         {
             ReceiveTimeout = timeout;
         }
 
-        internal void SetSendTimeout(int timeout)
+        public void SetSendTimeout(int timeout)
         {
             SendTimeout = timeout;
         }        
@@ -820,24 +820,24 @@ namespace BytesRoad.Net.Sockets
         {
             SocketBase _baseSocket;
 
-            internal Accept_Op(SocketBase baseSocket)
+            public Accept_Op(SocketBase baseSocket)
             {
                 _baseSocket = baseSocket;
             }
 
             #region IOp Members
 
-            internal override object Execute()
+            public override object Execute()
             {
                 return new SocketEx(_baseSocket.Accept());
             }
 
-            internal override object BeginExecute(AsyncCallback cb, object state)
+            public override object BeginExecute(AsyncCallback cb, object state)
             {
                 return _baseSocket.BeginAccept(cb, state);
             }
 
-            internal override object EndExecute(IAsyncResult ar)
+            public override object EndExecute(IAsyncResult ar)
             {
                 return new SocketEx(_baseSocket.EndAccept(ar));
             }
@@ -968,12 +968,12 @@ namespace BytesRoad.Net.Sockets
             SocketBase _baseSocket = null;
             EndPoint _remoteEP = null;
 
-            internal ConnectOp(SocketBase baseSocket)
+            public ConnectOp(SocketBase baseSocket)
             {
                 _baseSocket = baseSocket;
             }
 
-            internal ConnectOp(
+            public ConnectOp(
                 SocketBase baseSocket, 
                 string hostName, 
                 int hostPort)
@@ -983,7 +983,7 @@ namespace BytesRoad.Net.Sockets
                 _hostPort = hostPort;
             }
 
-            internal ConnectOp(SocketBase baseSocket, EndPoint remoteEP)
+            public ConnectOp(SocketBase baseSocket, EndPoint remoteEP)
             {
                 _baseSocket = baseSocket;
                 _remoteEP = remoteEP;
@@ -991,7 +991,7 @@ namespace BytesRoad.Net.Sockets
         
             #region IOp Members
 
-            internal override object Execute()
+            public override object Execute()
             {
                 if(null != _remoteEP)
                     _baseSocket.Connect(_remoteEP);
@@ -1000,7 +1000,7 @@ namespace BytesRoad.Net.Sockets
                 return null;
             }
 
-            internal override object BeginExecute(AsyncCallback cb, object state)
+            public override object BeginExecute(AsyncCallback cb, object state)
             {
                 if(null != _remoteEP)
                     return _baseSocket.BeginConnect(_remoteEP, cb, state);
@@ -1008,7 +1008,7 @@ namespace BytesRoad.Net.Sockets
                 return _baseSocket.BeginConnect(_hostName, _hostPort, cb, state);
             }
 
-            internal override object EndExecute(IAsyncResult ar)
+            public override object EndExecute(IAsyncResult ar)
             {
                 _baseSocket.EndConnect(ar);
                 return null;
@@ -1249,13 +1249,13 @@ namespace BytesRoad.Net.Sockets
             SocketEx   _primConnSock; // primary connection (used for socks proxy)
 
             // constructor used for async end
-            internal Bind_Op(SocketBase baseSocket)
+            public Bind_Op(SocketBase baseSocket)
             {
                 _baseSocket = baseSocket;
                 _primConnSock = null;
             }
 
-            internal Bind_Op(SocketBase baseSocket, SocketEx primConnSock)
+            public Bind_Op(SocketBase baseSocket, SocketEx primConnSock)
             {
                 _baseSocket = baseSocket;
                 _primConnSock = primConnSock;
@@ -1263,18 +1263,18 @@ namespace BytesRoad.Net.Sockets
 
             #region IOp Members
 
-            internal override object Execute()
+            public override object Execute()
             {
                 _baseSocket.Bind(_primConnSock._baseSocket);
                 return null;
             }
 
-            internal override object BeginExecute(AsyncCallback cb, object state)
+            public override object BeginExecute(AsyncCallback cb, object state)
             {
                 return _baseSocket.BeginBind(_primConnSock._baseSocket, cb, state);
             }
 
-            internal override object EndExecute(IAsyncResult ar)
+            public override object EndExecute(IAsyncResult ar)
             {
                 _baseSocket.EndBind(ar);
                 return null;
@@ -1511,7 +1511,7 @@ namespace BytesRoad.Net.Sockets
             int _backlog;
             SocketBase _baseSocket;
 
-            internal Listen_Op(SocketBase baseSocket, int backlog)
+            public Listen_Op(SocketBase baseSocket, int backlog)
             {
                 _backlog = backlog;
                 _baseSocket = baseSocket;
@@ -1519,18 +1519,18 @@ namespace BytesRoad.Net.Sockets
 
             #region IOp Members
 
-            internal override object Execute()
+            public override object Execute()
             {
                 _baseSocket.Listen(_backlog);
                 return null;
             }
 
-            internal override object BeginExecute(AsyncCallback cb, object state)
+            public override object BeginExecute(AsyncCallback cb, object state)
             {
                 throw new NotSupportedException("BeginListen is not supported.");
             }
 
-            internal override object EndExecute(IAsyncResult ar)
+            public override object EndExecute(IAsyncResult ar)
             {
                 throw new NotSupportedException("EndListen is not supported.");
             }
@@ -1607,12 +1607,12 @@ namespace BytesRoad.Net.Sockets
             int _size;
             SocketBase _baseSocket;
 
-            internal Receive_Op(SocketBase baseSocket)
+            public Receive_Op(SocketBase baseSocket)
             {
                 _baseSocket = baseSocket;
             }
 
-            internal Receive_Op(
+            public Receive_Op(
                 SocketBase baseSocket,
                 byte[] buffer, int offset, int size)
             {
@@ -1624,12 +1624,12 @@ namespace BytesRoad.Net.Sockets
 
             #region IOp Members
 
-            internal override object Execute()
+            public override object Execute()
             {
                 return _baseSocket.Receive(_buffer, _offset, _size);
             }
 
-            internal override object BeginExecute(AsyncCallback cb, object state)
+            public override object BeginExecute(AsyncCallback cb, object state)
             {
                 return _baseSocket.BeginReceive(
                     _buffer,
@@ -1639,7 +1639,7 @@ namespace BytesRoad.Net.Sockets
                     state);
             }
 
-            internal override object EndExecute(IAsyncResult ar)
+            public override object EndExecute(IAsyncResult ar)
             {
                 return _baseSocket.EndReceive(ar);
             }
@@ -1943,12 +1943,12 @@ namespace BytesRoad.Net.Sockets
             int _size;
             SocketBase _baseSocket;
 
-            internal Send_Op(SocketBase baseSocket)
+            public Send_Op(SocketBase baseSocket)
             {
                 _baseSocket = baseSocket;
             }
 
-            internal Send_Op(SocketBase baseSocket, byte[] buffer,
+            public Send_Op(SocketBase baseSocket, byte[] buffer,
                 int offset, int size)
             {
                 _baseSocket = baseSocket;
@@ -1959,17 +1959,17 @@ namespace BytesRoad.Net.Sockets
 
             #region IOp Members
 
-            internal override object Execute()
+            public override object Execute()
             {
                 return _baseSocket.Send(_buffer, _offset, _size);
             }
 
-            internal override object BeginExecute(AsyncCallback cb, object state)
+            public override object BeginExecute(AsyncCallback cb, object state)
             {
                 return _baseSocket.BeginSend(_buffer, _offset, _size, cb, state);
             }
 
-            internal override object EndExecute(IAsyncResult ar)
+            public override object EndExecute(IAsyncResult ar)
             {
                 return _baseSocket.EndSend(ar);
             }
@@ -2263,7 +2263,7 @@ namespace BytesRoad.Net.Sockets
         /// <see cref="BytesRoad.Net.Sockets.SocketEx"/>.
         /// </summary>
         /// <remarks>
-        /// Internally simply calls <see cref="BytesRoad.Net.Sockets.SocketEx.Dispose"/>.
+        /// publicly simply calls <see cref="BytesRoad.Net.Sockets.SocketEx.Dispose"/>.
         /// </remarks>
         public void Close()
         {

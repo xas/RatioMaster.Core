@@ -1,15 +1,14 @@
+using System;
+using System.Net;
+
 namespace RatioMaster.Core
 {
-    using System;
-    using System.IO;
-    using System.Net;
-
     public class VersionChecker
     {
-        public const string LocalVersion = "0430";
-        public const string PublicVersion = "0.43";
-        public const string ReleaseDate = "08-01-2016";
-        private const string ProgramPageVersion = "https://github.com/NikolayIT/RatioMaster.NET/releases/latest";
+        public const string LocalVersion = "0500";
+        public const string PublicVersion = "0.50";
+        public const string ReleaseDate = "2019-10-12";
+        private const string ProgramPageVersion = "https://github.com/xas/RatioMaster.NET/releases/latest";
 
         private readonly string userAgent;
 

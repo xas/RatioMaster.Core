@@ -6,19 +6,19 @@
     using System.Collections.ObjectModel;
     using System.IO;
 
-    internal class ValueDictionary : IBEncodeValue
+    public class ValueDictionary : IBEncodeValue
     {
-        internal ValueDictionary()
+        public ValueDictionary()
         {
             dict = new Dictionary<string, IBEncodeValue>();
         }
 
-        internal void Add(string key, IBEncodeValue value)
+        public void Add(string key, IBEncodeValue value)
         {
             dict.Add(key, value);
         }
 
-        internal bool Contains(string key)
+        public bool Contains(string key)
         {
             return dict.ContainsKey(key);
         }
@@ -76,12 +76,12 @@
             }
         }
 
-        internal void Remove(string key)
+        public void Remove(string key)
         {
             dict.Remove(key);
         }
 
-        internal void SetStringValue(string key, string value)
+        public void SetStringValue(string key, string value)
         {
             if (Contains(value))
             {
@@ -93,7 +93,7 @@
             }
         }
 
-        internal IBEncodeValue this[string key]
+        public IBEncodeValue this[string key]
         {
             get
             {
@@ -116,7 +116,7 @@
             }
         }
 
-        internal ICollection Keys
+        public ICollection Keys
         {
             get
             {
@@ -124,7 +124,7 @@
             }
         }
 
-        internal ICollection Values
+        public ICollection Values
         {
             get
             {
