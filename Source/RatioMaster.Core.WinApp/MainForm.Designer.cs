@@ -57,7 +57,6 @@
             this.goToProgramPageToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.goToAuthorPageToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.goToGitHubPageToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.jOINToOurForumPleaseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.trayIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.menuRightClickTray = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -100,7 +99,6 @@
             this.sessionsToolStripMenuItem,
             this.settingsToolStripMenuItem,
             this.helpToolStripMenuItem,
-            this.jOINToOurForumPleaseToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
@@ -346,15 +344,6 @@
             this.goToGitHubPageToolStripMenuItem1.Size = new System.Drawing.Size(198, 22);
             this.goToGitHubPageToolStripMenuItem1.Text = "Go to GitHub";
             this.goToGitHubPageToolStripMenuItem1.Click += new System.EventHandler(this.goToGitHubPageToolStripMenuItem_Click);
-            // 
-            // jOINToOurForumPleaseToolStripMenuItem
-            // 
-            this.jOINToOurForumPleaseToolStripMenuItem.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.jOINToOurForumPleaseToolStripMenuItem.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Bold);
-            this.jOINToOurForumPleaseToolStripMenuItem.Name = "jOINToOurForumPleaseToolStripMenuItem";
-            this.jOINToOurForumPleaseToolStripMenuItem.Size = new System.Drawing.Size(161, 20);
-            this.jOINToOurForumPleaseToolStripMenuItem.Text = "We need your donation :)";
-            this.jOINToOurForumPleaseToolStripMenuItem.Click += new System.EventHandler(this.jOINToOurForumPleaseToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
@@ -636,7 +625,6 @@
         internal System.Windows.Forms.ToolStripMenuItem toolStripMenuItem4;
         internal System.Windows.Forms.ToolStripMenuItem checkShowTrayBaloon;
         internal System.Windows.Forms.TabControl tab;
-        internal System.Windows.Forms.ToolStripMenuItem jOINToOurForumPleaseToolStripMenuItem;
         internal System.Windows.Forms.ToolStripStatusLabel lblCurrentVersion;
         internal System.Windows.Forms.ToolStripStatusLabel txtVersion;
         internal System.Windows.Forms.ToolStripStatusLabel lblLocalVersion;
