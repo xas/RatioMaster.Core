@@ -1,66 +1,35 @@
+using System;
+using System.Collections;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
+
 namespace BitTorrent
 {
-    using System;
-    using System.Collections;
-    using System.Collections.ObjectModel;
-    using System.IO;
-    using System.Text;
-
     public interface IBEncodeValue
     {
+        string StringValue { get; }
         byte[] Encode();
-
         void Parse(Stream p);
     }
 
-    public class TorrentException : Exception
+    public class ValueCollection : Collection<IBEncodeValue>, IBEncodeValue
     {
-        public TorrentException(string message)
-            : base(message)
+        public string StringValue => throw new NotImplementedException();
+
+        public byte[] Encode()
         {
-        }
-    }
+            Collection<byte> bytes = new Collection<byte>();
+            bytes.Add((byte)'l');
 
-    public class ValueList : IBEncodeValue, IEnumerable, IEnumerator
-    {
-        public Collection<IBEncodeValue> values;
+            foreach (IBEncodeValue member in Items) foreach (byte b in member.Encode()) bytes.Add(b);
 
-        public int Position = -1;
+            bytes.Add((byte)'e');
+            byte[] newBytes = new Byte[bytes.Count];
 
-        public IEnumerator GetEnumerator()
-        {
-            return this;
-        }
+            for (int i = 0; i < bytes.Count; i++) newBytes[i] = bytes[i];
 
-        /* Needed since Implementing IEnumerator*/
-
-        public bool MoveNext()
-        {
-            if (Position < values.Count - 1)
-            {
-                ++Position;
-                return true;
-            }
-
-            return false;
-        }
-
-        public void Reset()
-        {
-            Position = -1;
-        }
-
-        public object Current
-        {
-            get
-            {
-                return values[Position];
-            }
-        }
-
-        public ValueList()
-        {
-            values = new Collection<IBEncodeValue>();
+            return newBytes;
         }
 
         public void Parse(Stream s)
@@ -69,52 +38,33 @@ namespace BitTorrent
             while ((char)current != 'e')
             {
                 IBEncodeValue value = BEncode.Parse(s, current);
-                values.Add(value);
+                Add(value);
+                current = (byte)s.ReadByte();
+            }
+        }
+    }
+
+    public class ValueList : Collection<IBEncodeValue>, IBEncodeValue
+    {
+        public void Parse(Stream s)
+        {
+            byte current = (byte)s.ReadByte();
+            while ((char)current != 'e')
+            {
+                IBEncodeValue value = BEncode.Parse(s, current);
+                Add(value);
                 current = (byte)s.ReadByte();
             }
         }
 
-        public void Add(IBEncodeValue value)
-        {
-            values.Add(value);
-        }
-
-        public Collection<IBEncodeValue> Values
-        {
-            get
-            {
-                return values;
-            }
-
-            set
-            {
-                values.Clear();
-                foreach (IBEncodeValue val in value)
-                {
-                    value.Add(val);
-                }
-            }
-        }
-
-        public IBEncodeValue this[int index]
-        {
-            get
-            {
-                return values[index];
-            }
-
-            set
-            {
-                values[index] = value;
-            }
-        }
+        public string StringValue => throw new NotImplementedException();
 
         public byte[] Encode()
         {
             Collection<byte> bytes = new Collection<byte>();
             bytes.Add((byte)'l');
 
-            foreach (IBEncodeValue member in values) foreach (byte b in member.Encode()) bytes.Add(b);
+            foreach (IBEncodeValue member in Items) foreach (byte b in member.Encode()) bytes.Add(b);
 
             bytes.Add((byte)'e');
             byte[] newBytes = new Byte[bytes.Count];
@@ -129,8 +79,6 @@ namespace BitTorrent
     {
         private string v;
 
-        private byte[] data;
-
         public int Length
         {
             get
@@ -139,15 +87,9 @@ namespace BitTorrent
             }
         }
 
-        public byte[] Bytes
-        {
-            get
-            {
-                return data;
-            }
-        }
+        public byte[] Bytes { get; private set; }
 
-        public string String
+        public string StringValue
         {
             get
             {
@@ -157,7 +99,7 @@ namespace BitTorrent
             set
             {
                 v = value;
-                data = Encoding.GetEncoding(1252).GetBytes(v);
+                Bytes = Encoding.GetEncoding(1252).GetBytes(v);
             }
         }
 
@@ -166,19 +108,20 @@ namespace BitTorrent
             string prefix = v.Length.ToString() + ":";
             byte[] tempBytes = Encoding.GetEncoding(1252).GetBytes(prefix);
 
-            byte[] newBytes = new Byte[prefix.Length + data.Length];
+            byte[] newBytes = new Byte[prefix.Length + Bytes.Length];
             for (int i = 0; i < prefix.Length; i++) newBytes[i] = tempBytes[i];
-            for (int i = 0; i < data.Length; i++) newBytes[i + prefix.Length] = data[i];
+            for (int i = 0; i < Bytes.Length; i++) newBytes[i + prefix.Length] = Bytes[i];
             return newBytes;
         }
 
-        public ValueString(string StringValue)
+        public ValueString(string val)
         {
-            String = StringValue;
+            StringValue = val;
         }
 
         public ValueString()
         {
+            StringValue = string.Empty;
         }
 
         public void Parse(Stream s)
@@ -200,9 +143,9 @@ namespace BitTorrent
             }
 
             int length = Int32.Parse(q);
-            data = new Byte[length];
-            s.Read(data, 0, length);
-            v = Encoding.GetEncoding(1252).GetString(data); // store string also
+            Bytes = new Byte[length];
+            s.Read(Bytes, 0, length);
+            v = Encoding.GetEncoding(1252).GetString(Bytes); // store string also
         }
     }
 
@@ -212,7 +155,7 @@ namespace BitTorrent
 
         private byte[] data;
 
-        public string String
+        public string StringValue
         {
             get
             {
@@ -235,7 +178,7 @@ namespace BitTorrent
 
             set
             {
-                String = value.ToString();
+                StringValue = value.ToString();
             }
         }
 
@@ -251,7 +194,7 @@ namespace BitTorrent
         public ValueNumber(Int64 number)
         {
             v = number.ToString();
-            String = v;
+            StringValue = v;
         }
 
         public ValueNumber()
@@ -268,7 +211,7 @@ namespace BitTorrent
                 current = (char)s.ReadByte();
             }
 
-            String = Int64.Parse(buffer).ToString();
+            StringValue = Int64.Parse(buffer).ToString();
         }
     }
 
@@ -285,9 +228,7 @@ namespace BitTorrent
 
         public static string String(IBEncodeValue v)
         {
-            if (v is ValueString) return ((ValueString)v).String;
-            else if (v is ValueNumber) return ((ValueNumber)v).String;
-            else return null;
+            return v.StringValue;
         }
 
         public static IBEncodeValue Parse(Stream d, byte firstByte)

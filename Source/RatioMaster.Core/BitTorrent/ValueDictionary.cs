@@ -1,34 +1,20 @@
-﻿namespace BitTorrent
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+
+namespace BitTorrent
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.IO;
-
-    public class ValueDictionary : IBEncodeValue
+    public class ValueDictionary : Dictionary<string, IBEncodeValue>, IBEncodeValue
     {
-        public ValueDictionary()
-        {
-            dict = new Dictionary<string, IBEncodeValue>();
-        }
-
-        public void Add(string key, IBEncodeValue value)
-        {
-            dict.Add(key, value);
-        }
-
-        public bool Contains(string key)
-        {
-            return dict.ContainsKey(key);
-        }
+        public string StringValue => throw new System.NotImplementedException();
 
         public byte[] Encode()
         {
             Collection<byte> collection1 = new Collection<byte>();
             collection1.Add(100);
             ArrayList list1 = new ArrayList();
-            foreach (string text1 in dict.Keys)
+            foreach (string text1 in Keys)
             {
                 list1.Add(text1);
             }
@@ -41,7 +27,7 @@
                     collection1.Add(num1);
                 }
 
-                foreach (byte num2 in dict[text2].Encode())
+                foreach (byte num2 in this[text2].Encode())
                 {
                     collection1.Add(num2);
                 }
@@ -65,27 +51,31 @@
                 ValueString text1 = new ValueString();
                 text1.Parse(s, num1);
                 IBEncodeValue value1 = BEncode.Parse(s);
-                if (dict.ContainsKey(text1.String))
+                if (ContainsKey(text1.StringValue))
                 {
-                    dict[text1.String] = value1;
+                    this[text1.StringValue] = value1;
                 }
                 else
                 {
-                    dict.Add(text1.String, value1);
+                    Add(text1.StringValue, value1);
                 }
             }
         }
 
-        public void Remove(string key)
+        public IBEncodeValue GetFromKey(string key)
         {
-            dict.Remove(key);
+            if (!ContainsKey(key))
+            {
+                Add(key, new ValueString());
+            }
+            return this[key];
         }
 
         public void SetStringValue(string key, string value)
         {
-            if (Contains(value))
+            if (ContainsKey(value))
             {
-                ((ValueString)this[key]).String = value;
+                ((ValueString)this[key]).StringValue = value;
             }
             else
             {
@@ -93,45 +83,27 @@
             }
         }
 
-        public IBEncodeValue this[string key]
+        public new IBEncodeValue this[string key]
         {
             get
             {
-                if (!dict.ContainsKey(key))
+                if (!ContainsKey(key))
                 {
-                    dict.Add(key, new ValueString(""));
+                    Add(key, new ValueString(""));
                 }
 
-                return dict[key];
+                return base[key];
             }
 
             set
             {
-                if (dict.ContainsKey(key))
+                if (ContainsKey(key))
                 {
-                    dict.Remove(key);
+                    Remove(key);
                 }
 
-                dict.Add(key, value);
+                Add(key, value);
             }
         }
-
-        public ICollection Keys
-        {
-            get
-            {
-                return dict.Keys;
-            }
-        }
-
-        public ICollection Values
-        {
-            get
-            {
-                return dict.Values;
-            }
-        }
-
-        private Dictionary<string, IBEncodeValue> dict;
     }
 }

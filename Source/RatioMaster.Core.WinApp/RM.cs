@@ -923,14 +923,14 @@
                             }
                         }
 
-                        if (dictionary1.Contains("interval"))
+                        if (dictionary1.ContainsKey("interval"))
                         {
                             updateInterval(BEncode.String(dictionary1["interval"]));
                         }
 
-                        if (dictionary1.Contains("complete") && dictionary1.Contains("incomplete"))
+                        if (dictionary1.ContainsKey("complete") && dictionary1.ContainsKey("incomplete"))
                         {
-                            if (dictionary1.Contains("complete") && dictionary1.Contains("incomplete"))
+                            if (dictionary1.ContainsKey("complete") && dictionary1.ContainsKey("incomplete"))
                             {
                                 updateScrapStats(BEncode.String(dictionary1["complete"]), BEncode.String(dictionary1["incomplete"]), "");
 
@@ -944,7 +944,7 @@
                             }
                         }
 
-                        if (dictionary1.Contains("peers"))
+                        if (dictionary1.ContainsKey("peers"))
                         {
                             haveInitialPeers = true;
                             string text4;
@@ -1143,7 +1143,7 @@
                             }
                             else
                             {
-                                AddLogLine("Scrape returned : '" + ((ValueString)dictionary1[text3]).String + "'");
+                                AddLogLine("Scrape returned : '" + ((ValueString)dictionary1[text3]).StringValue + "'");
                             }
                         }
                     }
