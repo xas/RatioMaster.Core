@@ -43,7 +43,6 @@ namespace RatioMaster.Core
 
         private ProxyInfo currentProxy;
         internal TorrentInfo currentTorrent = new TorrentInfo();
-        internal Torrent currentTorrentFile = new Torrent();
         internal TcpListener localListen;
         private bool seedMode = false;
         private bool updateProcessStarted = false;
@@ -286,7 +285,7 @@ namespace RatioMaster.Core
                         }
 
                         text1 = encoding1.GetString(buffer1, 0, buffer1.Length);
-                        if ((text1.IndexOf("BitTorrent protocol") >= 0) && (text1.IndexOf(encoding1.GetString(this.currentTorrentFile.InfoHash)) >= 0))
+                        if ((text1.IndexOf("BitTorrent protocol") >= 0) && (text1.IndexOf(torrentManager.File.InfoHash) >= 0))
                         {
                             byte[] buffer2 = createHandshakeResponse();
                             stream1.Write(buffer2, 0, buffer2.Length);
@@ -352,8 +351,8 @@ namespace RatioMaster.Core
                 buffer1[num1++] = 0;
             }
 
-            Buffer.BlockCopy(currentTorrentFile.InfoHash, 0, buffer1, num1, currentTorrentFile.InfoHash.Length);
-            num1 += currentTorrentFile.InfoHash.Length;
+            Buffer.BlockCopy(torrentManager.File.InfoHashBytes, 0, buffer1, num1, torrentManager.File.InfoHash.Length);
+            num1 += torrentManager.File.InfoHash.Length;
             encoding1.GetBytes(currentTorrent.PeerID.ToCharArray(), 0, currentTorrent.PeerID.Length, buffer1, num1);
             num1 += encoding1.GetByteCount(currentTorrent.PeerID);
             return buffer1;
@@ -565,13 +564,11 @@ namespace RatioMaster.Core
         {
             try
             {
-                currentTorrentFile = new Torrent(torrentFilePath);
+                torrentManager.CreateTorrentFile(torrentFilePath);
                 torrentFile.Text = torrentFilePath;
-                trackerAddress.Text = currentTorrentFile.Announce;
-                shaHash.Text = ToHexString(currentTorrentFile.InfoHash);
-
-                // text.Text = currentTorrentFile.totalLength.ToString();
-                txtTorrentSize.Text = FormatFileSize((currentTorrentFile.totalLength));
+                trackerAddress.Text = torrentManager.File.Announce;
+                shaHash.Text = torrentManager.File.InfoHash;
+                txtTorrentSize.Text = FormatFileSize((torrentManager.File.TotalSize));
             }
             catch (Exception ex)
             {
@@ -618,12 +615,11 @@ namespace RatioMaster.Core
             }
 
             fileSize.Text = finishedPercent.ToString();
-            long size = (long)currentTorrentFile.totalLength;
-            if (currentTorrentFile != null)
+            if (torrentManager.File != null)
             {
                 if (finishedPercent == 0)
                 {
-                    torrent.Totalsize = (long)currentTorrentFile.totalLength;
+                    torrent.Totalsize = torrentManager.File.TotalSize;
                 }
                 else if (finishedPercent == 100)
                 {
@@ -631,7 +627,7 @@ namespace RatioMaster.Core
                 }
                 else
                 {
-                    torrent.Totalsize = (long)((currentTorrentFile.totalLength * (100 - finishedPercent)) / 100);
+                    torrent.Totalsize = (long)((torrentManager.File.TotalSize * (100 - finishedPercent)) / 100);
                 }
             }
             else
@@ -653,13 +649,13 @@ namespace RatioMaster.Core
 
             // Add log info
             AddLogLine("TORRENT INFO:");
-            AddLogLine("Torrent name: " + currentTorrentFile.Name);
+            AddLogLine("Torrent name: " + torrentManager.File.Name);
             AddLogLine("Tracker address: " + torrent.Tracker);
             AddLogLine("Hash code: " + torrent.Hash);
             AddLogLine("Upload rate: " + torrent.UploadRate / 1024);
             AddLogLine("Download rate: " + torrent.DownloadRate / 1024);
             AddLogLine("Update interval: " + torrent.Interval);
-            AddLogLine("Size: " + size / 1024);
+            AddLogLine("Size: " + torrentManager.File.TotalSize / 1024);
             AddLogLine("Left: " + torrent.Totalsize / 1024);
             AddLogLine("Finished: " + finishedPercent);
             AddLogLine("Filename: " + torrent.Filename);
@@ -1135,7 +1131,7 @@ namespace RatioMaster.Core
                         {
                             AddLogLine("---------- Scrape Info -----------");
                             BDictionary dictionary1 = response1.Dico.Get<BDictionary>("files");
-                            string text3 = Encoding.GetEncoding(0x4e4).GetString(currentTorrentFile.InfoHash);
+                            string text3 = Encoding.GetEncoding(0x4e4).GetString(torrentManager.File.InfoHashBytes);
                             if (dictionary1[text3] is BDictionary)
                             {
                                 BDictionary dictionary2 = dictionary1.Get<BDictionary>(text3);
@@ -1244,7 +1240,7 @@ namespace RatioMaster.Core
                 else
                 {
                     // finishedPercent = (((((float)currentTorrentFile.totalLength - (float)torrentInfo.totalsize) + (float)torrentInfo.downloaded) / (float)currentTorrentFile.totalLength) * 100);
-                    finishedPercent = (((currentTorrentFile.totalLength - (float)torrentInfo.Left)) / ((float)currentTorrentFile.totalLength)) * 100.0;
+                    finishedPercent = ((torrentManager.File.TotalSize - (float)torrentInfo.Left) / ((float)torrentManager.File.TotalSize)) * 100.0;
                     fileSize.Text = (finishedPercent >= 100) ? "100" : SetPrecision(finishedPercent.ToString(), 2);
                 }
 

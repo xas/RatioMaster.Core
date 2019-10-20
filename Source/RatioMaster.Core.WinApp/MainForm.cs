@@ -130,27 +130,6 @@ namespace RatioMaster.Core
             winRestore();
         }
 
-        private void trayIcon_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (checkShowTrayBaloon.Checked && trayIconBaloonIsUp == false)
-            {
-                trayIcon.BalloonTipText = "";
-                foreach (TabPage tabb in tab.TabPages)
-                {
-                    try
-                    {
-                        if (GetTabType(tabb) == TabType.RatioMaster) trayIcon.BalloonTipText += tabb.Text + " - " + ((RM)tabb.Controls[0]).currentTorrentFile.Name + "\n";
-                    }
-                    catch
-                    {
-                        trayIcon.BalloonTipText += tabb.Text + " - Not opened!" + "\n";
-                    }
-                }
-
-                trayIcon.ShowBalloonTip(0);
-            }
-        }
-
         private void goToProgramSiteToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start(Links.ProgramPage);

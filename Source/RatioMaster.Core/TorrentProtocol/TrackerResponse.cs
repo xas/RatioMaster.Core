@@ -134,16 +134,15 @@ namespace RatioMaster.Core.TorrentProtocol
             }
         }
 
-        private BDictionary ParseBEncodeDict(MemoryStream responseStream)
+        private void ParseBEncodeDict(MemoryStream responseStream)
         {
-            BDictionary dictionary1 = null;
             BencodeParser bParser = new BencodeParser(Encoding.GetEncoding(1252));
             if ((ContentEncoding == "gzip") || (ContentEncoding == "x-gzip"))
             {
                 var stream1 = new GZipStream(responseStream, CompressionMode.Decompress);
                 try
                 {
-                    return bParser.Parse<BDictionary>(stream1);
+                    Dico = bParser.Parse<BDictionary>(stream1);
                 }
                 catch (Exception)
                 {
@@ -152,14 +151,12 @@ namespace RatioMaster.Core.TorrentProtocol
 
             try
             {
-                dictionary1 = bParser.Parse<BDictionary>(responseStream);
+                Dico = bParser.Parse<BDictionary>(responseStream);
             }
             catch (Exception exception1)
             {
                 Console.Write(exception1.StackTrace);
             }
-
-            return dictionary1;
         }
     }
 }
