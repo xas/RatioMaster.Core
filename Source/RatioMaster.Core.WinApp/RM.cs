@@ -17,6 +17,8 @@
     using BytesRoad.Net.Sockets;
 
     using Microsoft.Win32;
+    using RatioMaster.Core.Helpers;
+    using RatioMaster.Core.TorrentProtocol;
 
     internal partial class RM : UserControl
     {
@@ -102,14 +104,14 @@
 
         internal void deployDefaultValues()
         {
-            TorrentInfo torrent = new TorrentInfo(0, 0);
-            trackerAddress.Text = torrent.tracker;
-            shaHash.Text = torrent.hash;
-            long num1 = torrent.uploadRate / 1024;
+            TorrentInfo torrent = new TorrentInfo();
+            trackerAddress.Text = torrent.Tracker;
+            shaHash.Text = torrent.Hash;
+            long num1 = torrent.UploadRate / 1024;
             uploadRate.Text = num1.ToString();
-            long num2 = torrent.downloadRate / 1024;
+            long num2 = torrent.DownloadRate / 1024;
             downloadRate.Text = num2.ToString();
-            interval.Text = torrent.interval.ToString();
+            interval.Text = torrent.Interval.ToString();
             comboProxyType.SelectedItem = "None";
         }
 
@@ -223,11 +225,11 @@
             {
                 if (checkTCPListen.Checked && localListen == null && currentProxy.ProxyType == ProxyType.None)
                 {
-                    localListen = new TcpListener(IPAddress.Any, int.Parse(currentTorrent.port));
+                    localListen = new TcpListener(IPAddress.Any, currentTorrent.Port);
                     try
                     {
                         localListen.Start();
-                        AddLogLine("Started TCP listener on port " + currentTorrent.port);
+                        AddLogLine("Started TCP listener on port " + currentTorrent.Port);
                     }
                     catch
                     {
@@ -347,8 +349,8 @@
 
             Buffer.BlockCopy(currentTorrentFile.InfoHash, 0, buffer1, num1, currentTorrentFile.InfoHash.Length);
             num1 += currentTorrentFile.InfoHash.Length;
-            encoding1.GetBytes(currentTorrent.peerID.ToCharArray(), 0, currentTorrent.peerID.Length, buffer1, num1);
-            num1 += encoding1.GetByteCount(currentTorrent.peerID);
+            encoding1.GetBytes(currentTorrent.PeerID.ToCharArray(), 0, currentTorrent.PeerID.Length, buffer1, num1);
+            num1 += encoding1.GetByteCount(currentTorrent.PeerID);
             return buffer1;
         }
 
@@ -575,7 +577,7 @@
         private TorrentInfo getCurrentTorrent()
         {
             Uri trackerUri;
-            TorrentInfo torrent = new TorrentInfo(0, 0);
+            TorrentInfo torrent = new TorrentInfo();
             try
             {
                 trackerUri = new Uri(trackerAddress.Text);
@@ -586,17 +588,17 @@
                 return torrent;
             }
 
-            torrent.tracker = trackerAddress.Text;
-            torrent.trackerUri = trackerUri;
-            torrent.hash = shaHash.Text;
-            torrent.uploadRate = (Int64)(uploadRate.Text.ParseValidFloat(50) * 1024);
+            torrent.Tracker = trackerAddress.Text;
+            torrent.TrackerUri = trackerUri;
+            torrent.Hash = shaHash.Text;
+            torrent.UploadRate = (Int64)(uploadRate.Text.ParseValidFloat(50) * 1024);
 
             // uploadRate.Text = (torrent.uploadRate / (float)1024).ToString();
-            torrent.downloadRate = (Int64)(downloadRate.Text.ParseValidFloat(10) * 1024);
+            torrent.DownloadRate = (Int64)(downloadRate.Text.ParseValidFloat(10) * 1024);
 
             // downloadRate.Text = (torrent.downloadRate / (float)1024).ToString();
-            torrent.interval = interval.Text.ParseValidInt(torrent.interval);
-            interval.Text = torrent.interval.ToString();
+            torrent.Interval = interval.Text.ParseValidInt(torrent.Interval);
+            interval.Text = torrent.Interval.ToString();
             double finishedPercent = fileSize.Text.ParseDouble(0);
             if (finishedPercent < 0 || finishedPercent > 100)
             {
@@ -616,50 +618,50 @@
             {
                 if (finishedPercent == 0)
                 {
-                    torrent.totalsize = (long)currentTorrentFile.totalLength;
+                    torrent.Totalsize = (long)currentTorrentFile.totalLength;
                 }
                 else if (finishedPercent == 100)
                 {
-                    torrent.totalsize = 0;
+                    torrent.Totalsize = 0;
                 }
                 else
                 {
-                    torrent.totalsize = (long)((currentTorrentFile.totalLength * (100 - finishedPercent)) / 100);
+                    torrent.Totalsize = (long)((currentTorrentFile.totalLength * (100 - finishedPercent)) / 100);
                 }
             }
             else
             {
-                torrent.totalsize = 0;
+                torrent.Totalsize = 0;
             }
 
-            torrent.left = torrent.totalsize;
-            torrent.filename = torrentFile.Text;
+            torrent.Left = torrent.Totalsize;
+            torrent.Filename = torrentFile.Text;
 
             // deploy custom values
-            torrent.port = customPort.Text.GetValueDefault(torrent.port);
-            customPort.Text = torrent.port;
-            torrent.key = customKey.Text.GetValueDefault(currentClient.Key);
-            torrent.numberOfPeers = customPeersNum.Text.GetValueDefault(torrent.numberOfPeers);
+            torrent.Port = customPort.Text.ParseValidInt(torrent.Port);
+            customPort.Text = torrent.Port.ToString();
+            torrent.Key = customKey.Text.GetValueDefault(currentClient.Key);
+            torrent.NumberOfPeers = customPeersNum.Text.GetValueDefault(torrent.NumberOfPeers);
             currentClient.Key = customKey.Text.GetValueDefault(currentClient.Key);
-            torrent.peerID = customPeerID.Text.GetValueDefault(currentClient.PeerID);
+            torrent.PeerID = customPeerID.Text.GetValueDefault(currentClient.PeerID);
             currentClient.PeerID = customPeerID.Text.GetValueDefault(currentClient.PeerID);
 
             // Add log info
             AddLogLine("TORRENT INFO:");
             AddLogLine("Torrent name: " + currentTorrentFile.Name);
-            AddLogLine("Tracker address: " + torrent.tracker);
-            AddLogLine("Hash code: " + torrent.hash);
-            AddLogLine("Upload rate: " + torrent.uploadRate / 1024);
-            AddLogLine("Download rate: " + torrent.downloadRate / 1024);
-            AddLogLine("Update interval: " + torrent.interval);
+            AddLogLine("Tracker address: " + torrent.Tracker);
+            AddLogLine("Hash code: " + torrent.Hash);
+            AddLogLine("Upload rate: " + torrent.UploadRate / 1024);
+            AddLogLine("Download rate: " + torrent.DownloadRate / 1024);
+            AddLogLine("Update interval: " + torrent.Interval);
             AddLogLine("Size: " + size / 1024);
-            AddLogLine("Left: " + torrent.totalsize / 1024);
+            AddLogLine("Left: " + torrent.Totalsize / 1024);
             AddLogLine("Finished: " + finishedPercent);
-            AddLogLine("Filename: " + torrent.filename);
-            AddLogLine("Number of peers: " + torrent.numberOfPeers);
-            AddLogLine("Port: " + torrent.port);
-            AddLogLine("Key: " + torrent.key);
-            AddLogLine("PeerID: " + torrent.peerID + "\n" + "\n");
+            AddLogLine("Filename: " + torrent.Filename);
+            AddLogLine("Number of peers: " + torrent.NumberOfPeers);
+            AddLogLine("Port: " + torrent.Port);
+            AddLogLine("Key: " + torrent.Key);
+            AddLogLine("PeerID: " + torrent.PeerID + "\n" + "\n");
             return torrent;
         }
 
@@ -788,7 +790,7 @@
                 CloseTcpListener();
                 temporaryIntervalCounter = 0;
                 timerValue.Text = "stopped";
-                currentTorrent.numberOfPeers = "0";
+                currentTorrent.NumberOfPeers = "0";
                 updateProcessStarted = false;
                 RemaningWork.Stop();
                 remWork = 0;
@@ -810,7 +812,7 @@
             if (updateProcessStarted)
             {
                 OpenTcpListener();
-                temporaryIntervalCounter = currentTorrent.interval;
+                temporaryIntervalCounter = currentTorrent.Interval;
             }
         }
 
@@ -849,13 +851,13 @@
             checkTCPListen.Checked = true;
 
             // Options
-            TorrentInfo torrent = new TorrentInfo(0, 0);
-            int defup = (int)(torrent.uploadRate / 1024);
-            int defd = (int)(torrent.downloadRate / 1024);
+            TorrentInfo torrent = new TorrentInfo();
+            int defup = (int)(torrent.UploadRate / 1024);
+            int defd = (int)(torrent.DownloadRate / 1024);
             uploadRate.Text = defup.ToString();
             downloadRate.Text = defd.ToString();
             fileSize.Text = "0";
-            interval.Text = torrent.interval.ToString();
+            interval.Text = torrent.Interval.ToString();
 
             // Log
             checkLogEnabled.Checked = true;
@@ -1023,7 +1025,7 @@
                     {
                         if (temp > 3600) temp = 3600;
                         if (temp < 60) temp = 60;
-                        currentTorrent.interval = temp;
+                        currentTorrent.Interval = temp;
                         AddLogLine("Updating Interval: " + temp);
                         interval.ReadOnly = false;
                         interval.Text = temp.ToString();
@@ -1042,34 +1044,34 @@
         {
             // Random random = new Random();
             string uploaded = "0";
-            if (torrentInfo.uploaded > 0)
+            if (torrentInfo.Uploaded > 0)
             {
-                torrentInfo.uploaded = RoundByDenominator(torrentInfo.uploaded, 0x4000);
-                uploaded = torrentInfo.uploaded.ToString();
+                torrentInfo.Uploaded = RoundByDenominator(torrentInfo.Uploaded, 0x4000);
+                uploaded = torrentInfo.Uploaded.ToString();
 
                 // uploaded = Convert.ToString(torrentInfo.uploaded + random.Next(1, 1023));
             }
 
             string downloaded = "0";
-            if (torrentInfo.downloaded > 0)
+            if (torrentInfo.Downloaded > 0)
             {
-                torrentInfo.downloaded = RoundByDenominator(torrentInfo.downloaded, 0x10);
-                downloaded = torrentInfo.downloaded.ToString();
+                torrentInfo.Downloaded = RoundByDenominator(torrentInfo.Downloaded, 0x10);
+                downloaded = torrentInfo.Downloaded.ToString();
 
                 // downloaded = Convert.ToString(torrentInfo.downloaded + random.Next(1, 1023));
             }
 
-            if (torrentInfo.left > 0)
+            if (torrentInfo.Left > 0)
             {
-                torrentInfo.left = torrentInfo.totalsize - torrentInfo.downloaded;
+                torrentInfo.Left = torrentInfo.Totalsize - torrentInfo.Downloaded;
             }
 
-            string left = torrentInfo.left.ToString();
-            string key = torrentInfo.key;
-            string port = torrentInfo.port;
-            string peerID = torrentInfo.peerID;
+            string left = torrentInfo.Left.ToString();
+            string key = torrentInfo.Key;
+            string port = torrentInfo.Port.ToString();
+            string peerID = torrentInfo.PeerID;
             string urlString;
-            urlString = torrentInfo.tracker;
+            urlString = torrentInfo.Tracker;
             if (urlString.Contains("?"))
             {
                 urlString += "&";
@@ -1082,15 +1084,15 @@
             if (eventType.Contains("started")) urlString = urlString.Replace("&natmapped=1&localip={localip}", "");
             if (!eventType.Contains("stopped")) urlString = urlString.Replace("&trackerid=48", "");
             urlString += currentClient.Query;
-            urlString = urlString.Replace("{infohash}", HashUrlEncode(torrentInfo.hash, currentClient.HashUpperCase));
+            urlString = urlString.Replace("{infohash}", HashUrlEncode(torrentInfo.Hash, currentClient.HashUpperCase));
             urlString = urlString.Replace("{peerid}", peerID);
             urlString = urlString.Replace("{port}", port);
             urlString = urlString.Replace("{uploaded}", uploaded);
             urlString = urlString.Replace("{downloaded}", downloaded);
             urlString = urlString.Replace("{left}", left);
             urlString = urlString.Replace("{event}", eventType);
-            if ((torrentInfo.numberOfPeers == "0") && !eventType.ToLower().Contains("stopped")) torrentInfo.numberOfPeers = "200";
-            urlString = urlString.Replace("{numwant}", torrentInfo.numberOfPeers);
+            if ((torrentInfo.NumberOfPeers == "0") && !eventType.ToLower().Contains("stopped")) torrentInfo.NumberOfPeers = "200";
+            urlString = urlString.Replace("{numwant}", torrentInfo.NumberOfPeers);
             urlString = urlString.Replace("{key}", key);
             urlString = urlString.Replace("{localip}", Functions.GetIp());
             return urlString;
@@ -1158,7 +1160,7 @@
         internal string getScrapeUrlString(TorrentInfo torrentInfo)
         {
             string urlString;
-            urlString = torrentInfo.tracker;
+            urlString = torrentInfo.Tracker;
             int index = urlString.LastIndexOf("/");
             if (urlString.Substring(index + 1, 8).ToLower() != "announce")
             {
@@ -1166,7 +1168,7 @@
             }
 
             urlString = urlString.Substring(0, index + 1) + "scrape" + urlString.Substring(index + 9);
-            string hash = HashUrlEncode(torrentInfo.hash, currentClient.HashUpperCase);
+            string hash = HashUrlEncode(torrentInfo.Hash, currentClient.HashUpperCase);
             if (urlString.Contains("?"))
             {
                 urlString = urlString + "&";
@@ -1189,30 +1191,30 @@
             {
                 // Random random = new Random();
                 // modify Upload Rate
-                uploadCount.Text = FormatFileSize((ulong)torrentInfo.uploaded);
-                Int64 uploadedR = torrentInfo.uploadRate + RandomSP(txtRandUpMin.Text, txtRandUpMax.Text, chkRandUP.Checked);
+                uploadCount.Text = FormatFileSize((ulong)torrentInfo.Uploaded);
+                Int64 uploadedR = torrentInfo.UploadRate + RandomSP(txtRandUpMin.Text, txtRandUpMax.Text, chkRandUP.Checked);
 
                 // Int64 uploadedR = torrentInfo.uploadRate + (Int64)random.Next(10 * 1024) - 5 * 1024;
                 if (uploadedR < 0) { uploadedR = 0; }
-                torrentInfo.uploaded += uploadedR;
+                torrentInfo.Uploaded += uploadedR;
 
                 // modify Download Rate
-                downloadCount.Text = FormatFileSize((ulong)torrentInfo.downloaded);
-                if (!seedMode && torrentInfo.downloadRate > 0)    // dont update download stats
+                downloadCount.Text = FormatFileSize((ulong)torrentInfo.Downloaded);
+                if (!seedMode && torrentInfo.DownloadRate > 0)    // dont update download stats
                 {
-                    Int64 downloadedR = torrentInfo.downloadRate + RandomSP(txtRandDownMin.Text, txtRandDownMax.Text, chkRandDown.Checked);
+                    Int64 downloadedR = torrentInfo.DownloadRate + RandomSP(txtRandDownMin.Text, txtRandDownMax.Text, chkRandDown.Checked);
 
                     // Int64 downloadedR = torrentInfo.downloadRate + (Int64)random.Next(10 * 1024) - 5 * 1024;
                     if (downloadedR < 0) { downloadedR = 0; }
-                    torrentInfo.downloaded += downloadedR;
-                    torrentInfo.left = torrentInfo.totalsize - torrentInfo.downloaded;
+                    torrentInfo.Downloaded += downloadedR;
+                    torrentInfo.Left = torrentInfo.Totalsize - torrentInfo.Downloaded;
                 }
 
-                if (torrentInfo.left <= 0) // either seedMode or start seed mode
+                if (torrentInfo.Left <= 0) // either seedMode or start seed mode
                 {
-                    torrentInfo.downloaded = torrentInfo.totalsize;
-                    torrentInfo.left = 0;
-                    torrentInfo.downloadRate = 0;
+                    torrentInfo.Downloaded = torrentInfo.Totalsize;
+                    torrentInfo.Left = 0;
+                    torrentInfo.DownloadRate = 0;
                     if (!seedMode)
                     {
                         currentTorrent = torrentInfo;
@@ -1224,30 +1226,30 @@
                     }
                 }
 
-                torrentInfo.interval = int.Parse(interval.Text);
+                torrentInfo.Interval = int.Parse(interval.Text);
                 currentTorrent = torrentInfo;
                 double finishedPercent;
-                if (torrentInfo.totalsize == 0)
+                if (torrentInfo.Totalsize == 0)
                 {
                     fileSize.Text = "100";
                 }
                 else
                 {
                     // finishedPercent = (((((float)currentTorrentFile.totalLength - (float)torrentInfo.totalsize) + (float)torrentInfo.downloaded) / (float)currentTorrentFile.totalLength) * 100);
-                    finishedPercent = (((currentTorrentFile.totalLength - (float)torrentInfo.left)) / ((float)currentTorrentFile.totalLength)) * 100.0;
+                    finishedPercent = (((currentTorrentFile.totalLength - (float)torrentInfo.Left)) / ((float)currentTorrentFile.totalLength)) * 100.0;
                     fileSize.Text = (finishedPercent >= 100) ? "100" : SetPrecision(finishedPercent.ToString(), 2);
                 }
 
-                downloadCount.Text = FormatFileSize((ulong)torrentInfo.downloaded);
+                downloadCount.Text = FormatFileSize((ulong)torrentInfo.Downloaded);
 
                 // modify Ratio Lable
-                if (torrentInfo.downloaded / 1024 < 100)
+                if (torrentInfo.Downloaded / 1024 < 100)
                 {
                     lblTorrentRatio.Text = "NaN";
                 }
                 else
                 {
-                    float data = torrentInfo.uploaded / (float)torrentInfo.downloaded;
+                    float data = torrentInfo.Uploaded / (float)torrentInfo.Downloaded;
                     lblTorrentRatio.Text = SetPrecision(data.ToString(), 2);
                 }
             }
@@ -1314,12 +1316,12 @@
 
                 if ((string)cmbStopAfter.SelectedItem == "When uploaded >")
                 {
-                    if (currentTorrent.uploaded > long.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
+                    if (currentTorrent.Uploaded > long.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
                 }
 
                 if ((string)cmbStopAfter.SelectedItem == "When downloaded >")
                 {
-                    if (currentTorrent.downloaded > int.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
+                    if (currentTorrent.Downloaded > int.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
                 }
 
                 if ((string)cmbStopAfter.SelectedItem == "When leechers/seeders <")
@@ -1345,7 +1347,7 @@
                     updateCounters(currentTorrent);
                 }
 
-                int num1 = currentTorrent.interval - temporaryIntervalCounter;
+                int num1 = currentTorrent.Interval - temporaryIntervalCounter;
                 totalRunningTimeCounter++;
                 lblTotalTime.Text = ConvertToTime(totalRunningTimeCounter);
                 StopModule();
@@ -1734,30 +1736,30 @@
         {
             if (uploadRate.Text == "")
             {
-                currentTorrent.uploadRate = 0;
+                currentTorrent.UploadRate = 0;
             }
             else
             {
-                TorrentInfo torrent = new TorrentInfo(0, 0);
-                currentTorrent.uploadRate = uploadRate.Text.ParseValidInt64(torrent.uploadRate / 1024) * 1024;
+                TorrentInfo torrent = new TorrentInfo();
+                currentTorrent.UploadRate = uploadRate.Text.ParseValidInt64(torrent.UploadRate / 1024) * 1024;
             }
 
-            AddLogLine("Upload rate changed to " + (currentTorrent.uploadRate / 1024));
+            AddLogLine("Upload rate changed to " + (currentTorrent.UploadRate / 1024));
         }
 
         internal void downloadRate_TextChanged(object sender, EventArgs e)
         {
             if (downloadRate.Text == "")
             {
-                currentTorrent.downloadRate = 0;
+                currentTorrent.DownloadRate = 0;
             }
             else
             {
-                TorrentInfo torrent = new TorrentInfo(0, 0);
-                currentTorrent.downloadRate = downloadRate.Text.ParseValidInt64(torrent.downloadRate / 1024) * 1024;
+                TorrentInfo torrent = new TorrentInfo();
+                currentTorrent.DownloadRate = downloadRate.Text.ParseValidInt64(torrent.DownloadRate / 1024) * 1024;
             }
 
-            AddLogLine("Download rate changed to " + (currentTorrent.downloadRate / 1024));
+            AddLogLine("Download rate changed to " + (currentTorrent.DownloadRate / 1024));
         }
 
         #endregion
@@ -1877,10 +1879,10 @@
             currentClient = TorrentClientFactory.GetClient(clientname);
             customKey.Text = currentClient.Key;
             customPeerID.Text = currentClient.PeerID;
-            currentTorrent.port = rand.Next(1025, 65535).ToString();
-            customPort.Text = currentTorrent.port;
-            currentTorrent.numberOfPeers = currentClient.DefNumWant.ToString();
-            customPeersNum.Text = currentTorrent.numberOfPeers;
+            currentTorrent.Port = rand.Next(1025, 65535);
+            customPort.Text = currentTorrent.Port.ToString();
+            currentTorrent.NumberOfPeers = currentClient.DefNumWant.ToString();
+            customPeersNum.Text = currentTorrent.NumberOfPeers;
             lblGenStatus.Text = "Generation status: " + "generated new values for " + clientname;
         }
 
@@ -1901,8 +1903,8 @@
                 {
                     customKey.Text = currentClient.Key;
                     customPeerID.Text = currentClient.PeerID;
-                    customPort.Text = currentTorrent.port;
-                    customPeersNum.Text = currentTorrent.numberOfPeers;
+                    customPort.Text = currentTorrent.Port.ToString();
+                    customPeersNum.Text = currentTorrent.NumberOfPeers;
                     lblGenStatus.Text = "Generation status: " + clientname + " found! Parsed all values!";
                 }
                 else
@@ -1970,17 +1972,17 @@
                         match1 = new Regex("&port=(.+?)(&| )", RegexOptions.Compiled).Match(text1);
                         if (match1.Success)
                         {
-                            currentTorrent.port = match1.Groups[1].ToString();
-                            AddLogLine("====> Port = " + currentTorrent.port);
+                            currentTorrent.Port = int.Parse(match1.Groups[1].ToString());
+                            AddLogLine("====> Port = " + currentTorrent.Port);
                         }
 
                         match1 = new Regex("&numwant=(.+?)(&| )", RegexOptions.Compiled).Match(text1);
                         if (match1.Success)
                         {
-                            currentTorrent.numberOfPeers = match1.Groups[1].ToString();
-                            AddLogLine("====> NumWant = " + currentTorrent.numberOfPeers);
+                            currentTorrent.NumberOfPeers = match1.Groups[1].ToString();
+                            AddLogLine("====> NumWant = " + currentTorrent.NumberOfPeers);
                             int res;
-                            if (!int.TryParse(currentTorrent.numberOfPeers, out res)) currentTorrent.numberOfPeers = currentClient.DefNumWant.ToString();
+                            if (!int.TryParse(currentTorrent.NumberOfPeers, out res)) currentTorrent.NumberOfPeers = currentClient.DefNumWant.ToString();
                         }
 
                         num2 += currentOffset;

@@ -1,86 +1,86 @@
-namespace RatioMaster.Core
+using System;
+using System.IO;
+using System.IO.Compression;
+
+using BitTorrent;
+
+namespace RatioMaster.Core.TorrentProtocol
 {
-    using System;
-    using System.IO;
-    using System.IO.Compression;
-
-    using BitTorrent;
-
-    internal class TrackerResponse
+    public class TrackerResponse
     {
         private bool chunkedEncoding;
 
-        internal bool doRedirect;
+        public bool doRedirect;
 
-        internal string RedirectionURL;
+        public string RedirectionURL;
 
-        internal bool response_status_302;
+        public bool response_status_302;
 
-        internal TrackerResponse(MemoryStream responseStream)
+        public TrackerResponse(MemoryStream responseStream)
         {
             string text2;
-            this.Headers = string.Empty;
-            this.Body = string.Empty;
-            this.ContentEncoding = string.Empty;
-            this.Charset = string.Empty;
-            this.RedirectionURL = string.Empty;
+            Headers = string.Empty;
+            Body = string.Empty;
+            ContentEncoding = string.Empty;
+            Charset = string.Empty;
+            RedirectionURL = string.Empty;
             var stream1 = new MemoryStream();
             var reader1 = new StreamReader(responseStream);
             responseStream.Position = 0;
-            string text1 = this.GetNewLineStr(reader1);
-            this.Headers = string.Empty;
+            string text1 = GetNewLineStr(reader1);
+            Headers = string.Empty;
             do
             {
                 text2 = reader1.ReadLine();
                 int num1 = text2.IndexOf("302 Found");
                 if (num1 >= 0)
                 {
-                    this.response_status_302 = true;
+                    response_status_302 = true;
                 }
                 else
                 {
                     num1 = text2.IndexOf("Location: ");
                     if (num1 >= 0)
                     {
-                        this.RedirectionURL = text2.Substring(num1 + 10);
+                        RedirectionURL = text2.Substring(num1 + 10);
                     }
                     else
                     {
                         num1 = text2.IndexOf("Content-Encoding: ");
                         if (num1 >= 0)
                         {
-                            this.ContentEncoding = text2.Substring(num1 + 0x12).ToLower();
+                            ContentEncoding = text2.Substring(num1 + 0x12).ToLower();
                         }
                         else
                         {
                             num1 = text2.IndexOf("charset=");
                             if (num1 >= 0)
                             {
-                                this.Charset = text2.Substring(num1 + 8).ToLower();
+                                Charset = text2.Substring(num1 + 8).ToLower();
                             }
                             else
                             {
                                 num1 = text2.IndexOf("Transfer-Encoding: chunked");
                                 if (num1 >= 0)
                                 {
-                                    this.chunkedEncoding = true;
+                                    chunkedEncoding = true;
                                 }
                             }
                         }
                     }
                 }
 
-                this.Headers = this.Headers + text2 + text1;
+                Headers = Headers + text2 + text1;
             }
             while (text2.Length != 0);
-            responseStream.Position = this.Headers.Length;
-            if (this.response_status_302 && (this.RedirectionURL != string.Empty))
+            responseStream.Position = Headers.Length;
+            if (response_status_302 && (RedirectionURL != string.Empty))
             {
-                this.doRedirect = true;
+                doRedirect = true;
             }
             else
             {
-                if (!this.chunkedEncoding)
+                if (!chunkedEncoding)
                 {
                     byte[] buffer2 = new byte[responseStream.Length - responseStream.Position];
                     responseStream.Read(buffer2, 0, buffer2.Length);
@@ -113,25 +113,25 @@ namespace RatioMaster.Core
                 }
 
                 stream1.Position = 0;
-                this.Dict = this.ParseBEncodeDict(stream1);
+                Dict = ParseBEncodeDict(stream1);
                 stream1.Position = 0;
                 var reader2 = new StreamReader(stream1);
-                this.Body = reader2.ReadToEnd();
+                Body = reader2.ReadToEnd();
                 stream1.Dispose();
                 reader2.Dispose();
                 reader1.Dispose();
             }
         }
 
-        internal string Body { get; private set; }
+        public string Body { get; private set; }
 
-        internal string Charset { get; private set; }
+        public string Charset { get; private set; }
 
-        internal string ContentEncoding { get; private set; }
+        public string ContentEncoding { get; private set; }
 
-        internal ValueDictionary Dict { get; private set; }
+        public ValueDictionary Dict { get; private set; }
 
-        internal string Headers { get; private set; }
+        public string Headers { get; private set; }
 
         private string GetNewLineStr(StreamReader streamReader)
         {
@@ -155,7 +155,7 @@ namespace RatioMaster.Core
         private ValueDictionary ParseBEncodeDict(MemoryStream responseStream)
         {
             ValueDictionary dictionary1 = null;
-            if ((this.ContentEncoding == "gzip") || (this.ContentEncoding == "x-gzip"))
+            if ((ContentEncoding == "gzip") || (ContentEncoding == "x-gzip"))
             {
                 var stream1 = new GZipStream(responseStream, CompressionMode.Decompress);
                 try

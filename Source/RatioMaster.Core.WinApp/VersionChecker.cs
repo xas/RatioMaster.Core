@@ -5,9 +5,9 @@ namespace RatioMaster.Core
 {
     public class VersionChecker
     {
-        public const string LocalVersion = "0500";
-        public const string PublicVersion = "0.50";
-        public const string ReleaseDate = "2019-10-12";
+        public const string LocalVersion = "0520";
+        public const string PublicVersion = "0.52";
+        public const string ReleaseDate = "2019-10-20";
         private const string ProgramPageVersion = "https://github.com/xas/RatioMaster.NET/releases/latest";
 
         private readonly string userAgent;

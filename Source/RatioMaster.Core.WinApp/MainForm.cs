@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Xml;
 using Microsoft.Win32;
 using System.IO;
+using RatioMaster.Core.TorrentProtocol;
 
 namespace RatioMaster.Core
 {
@@ -451,9 +452,9 @@ namespace RatioMaster.Core
         {
             AppendItem(aXmlDoc, aXmlElement, name, "Name");
             TorrentInfo torrentInfo = data.currentTorrent;
-            if (torrentInfo.filename != null)
+            if (torrentInfo.Filename != null)
             {
-                AppendItem(aXmlDoc, aXmlElement, torrentInfo.filename, "Address");
+                AppendItem(aXmlDoc, aXmlElement, torrentInfo.Filename, "Address");
             }
             else
             {
