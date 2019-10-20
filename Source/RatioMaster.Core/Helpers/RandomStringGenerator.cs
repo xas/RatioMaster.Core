@@ -1,27 +1,27 @@
-namespace RatioMaster.Core
-{
-    using System;
-    using System.Text;
+using System;
+using System.Text;
 
-    internal class RandomStringGenerator
+namespace RatioMaster.Core.Helpers
+{
+    public class RandomStringGenerator
     {
         private readonly char[] characterArray;
         private readonly Random randomNumbersGenerator;
 
         public RandomStringGenerator()
         {
-            this.characterArray = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
-            this.randomNumbersGenerator = new Random();
+            characterArray = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
+            randomNumbersGenerator = new Random();
         }
 
         public char GetRandomCharacter()
         {
-            return this.characterArray[(int)((this.characterArray.GetUpperBound(0) + 1) * this.randomNumbersGenerator.NextDouble())];
+            return characterArray[(int)((characterArray.GetLength(0)) * randomNumbersGenerator.NextDouble())];
         }
 
         public string Generate(int stringLength)
         {
-            return this.Generate(stringLength, false);
+            return Generate(stringLength, false);
         }
 
         public string Generate(int stringLength, bool randomness)
@@ -31,11 +31,11 @@ namespace RatioMaster.Core
             {
                 if (randomness)
                 {
-                    stringBuilder.Append((char)this.randomNumbersGenerator.Next(255));
+                    stringBuilder.Append((char)randomNumbersGenerator.Next(255));
                 }
                 else
                 {
-                    stringBuilder.Append(this.GetRandomCharacter());
+                    stringBuilder.Append(GetRandomCharacter());
                 }
             }
 
@@ -47,7 +47,7 @@ namespace RatioMaster.Core
             var stringBuilder = new StringBuilder { Capacity = stringLength };
             for (int count = 0; count <= stringLength - 1; count++)
             {
-                stringBuilder.Append(charArray[(int)((charArray.GetUpperBound(0) + 1) * this.randomNumbersGenerator.NextDouble())]);
+                stringBuilder.Append(charArray[(int)((charArray.GetLength(0)) * randomNumbersGenerator.NextDouble())]);
             }
 
             return stringBuilder.ToString();
@@ -55,17 +55,16 @@ namespace RatioMaster.Core
 
         public string Generate(string inputString, bool upperCase)
         {
-            // TODO: Use StringBuilder
-            string result = string.Empty;
+            StringBuilder result = new StringBuilder();
             for (int i = 0; i < inputString.Length; i = i + 1)
             {
                 if (char.IsLetterOrDigit(inputString[i]) && inputString[i] < 127)
                 {
-                    result += inputString[i];
+                    result.Append(inputString[i]);
                 }
                 else
                 {
-                    result += "%";
+                    result.Append('%');
                     string temp = Convert.ToString(inputString[i], 16);
                     if (upperCase)
                     {
@@ -74,16 +73,16 @@ namespace RatioMaster.Core
 
                     if (temp.Length == 1)
                     {
-                        result += "0" + temp;
+                        result.Append('0').Append(temp);
                     }
                     else
                     {
-                        result += temp;
+                        result.Append(temp);
                     }
                 }
             }
 
-            return result;
+            return result.ToString();
         }
     }
 }

@@ -364,7 +364,6 @@
             this.trayIcon.BalloonTipClosed += new System.EventHandler(this.trayIcon_BalloonTipClosed);
             this.trayIcon.BalloonTipShown += new System.EventHandler(this.trayIcon_BalloonTipShown);
             this.trayIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.trayIcon_MouseDoubleClick);
-            this.trayIcon.MouseMove += new System.Windows.Forms.MouseEventHandler(this.trayIcon_MouseMove);
             // 
             // menuRightClickTray
             // 

@@ -696,7 +696,6 @@ namespace RatioMaster.Core
             this.txtStopValue.Size = new System.Drawing.Size(59, 20);
             this.txtStopValue.TabIndex = 24;
             this.txtStopValue.Text = "0";
-            this.txtStopValue.TextChanged += new System.EventHandler(this.txtStopValue_TextChanged);
             // 
             // intervalLabel
             // 
@@ -725,7 +724,6 @@ namespace RatioMaster.Core
             this.fileSize.Size = new System.Drawing.Size(48, 20);
             this.fileSize.TabIndex = 20;
             this.fileSize.Text = "0";
-            this.fileSize.TextChanged += new System.EventHandler(this.fileSize_TextChanged);
             // 
             // cmbVersion
             // 

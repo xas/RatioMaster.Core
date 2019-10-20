@@ -1,13 +1,18 @@
-﻿namespace BitTorrent
-{
-    using System;
-    using System.Collections.ObjectModel;
-    using System.IO;
-    using System.Security.Cryptography;
+﻿using System;
 
+namespace BitTorrent
+{
     public class IncompleteTorrentData : TorrentException
     {
         public IncompleteTorrentData(string message)
+            : base(message)
+        {
+        }
+    }
+
+    public class TorrentException : Exception
+    {
+        public TorrentException(string message)
             : base(message)
         {
         }

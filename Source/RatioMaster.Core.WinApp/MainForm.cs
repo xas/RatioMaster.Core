@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Xml;
 using Microsoft.Win32;
 using System.IO;
+using RatioMaster.Core.TorrentProtocol;
 
 namespace RatioMaster.Core
 {
@@ -127,27 +128,6 @@ namespace RatioMaster.Core
         private void restoreToolStripMenuItem_Click(object sender, EventArgs e)
         {
             winRestore();
-        }
-
-        private void trayIcon_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (checkShowTrayBaloon.Checked && trayIconBaloonIsUp == false)
-            {
-                trayIcon.BalloonTipText = "";
-                foreach (TabPage tabb in tab.TabPages)
-                {
-                    try
-                    {
-                        if (GetTabType(tabb) == TabType.RatioMaster) trayIcon.BalloonTipText += tabb.Text + " - " + ((RM)tabb.Controls[0]).currentTorrentFile.Name + "\n";
-                    }
-                    catch
-                    {
-                        trayIcon.BalloonTipText += tabb.Text + " - Not opened!" + "\n";
-                    }
-                }
-
-                trayIcon.ShowBalloonTip(0);
-            }
         }
 
         private void goToProgramSiteToolStripMenuItem_Click(object sender, EventArgs e)
@@ -450,10 +430,10 @@ namespace RatioMaster.Core
         private static void NewMainItem(XmlDocument aXmlDoc, XmlElement aXmlElement, RM data, string name)
         {
             AppendItem(aXmlDoc, aXmlElement, name, "Name");
-            TorrentInfo torrentInfo = data.currentTorrent;
-            if (torrentInfo.filename != null)
+            TorrentInfo torrentInfo = data.torrentManager.Info;
+            if (torrentInfo.Filename != null)
             {
-                AppendItem(aXmlDoc, aXmlElement, torrentInfo.filename, "Address");
+                AppendItem(aXmlDoc, aXmlElement, torrentInfo.Filename, "Address");
             }
             else
             {

@@ -5,7 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BencodeNET" Version="3.0.1" />
+    <PackageReference Include="NLog" Version="4.6.7" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Client\" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,7 @@
-﻿namespace RatioMaster.Core
-{
-    using System;
-    using System.Globalization;
+﻿using System.Globalization;
 
+namespace RatioMaster.Core.Helpers
+{
     public static class StringExtensions
     {
         public static double ParseDouble(this string inputString, double defVal)
