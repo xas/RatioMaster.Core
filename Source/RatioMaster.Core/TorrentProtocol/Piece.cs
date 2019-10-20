@@ -1,4 +1,5 @@
-﻿using BitTorrent;
+﻿using BencodeNET.Objects;
+using BitTorrent;
 using System;
 using System.IO;
 
@@ -16,7 +17,7 @@ namespace RatioMaster.Core.TorrentProtocol
             PieceNumber = pieceNumber;
             Torrent = parent;
 
-            Buffer.BlockCopy(((ValueString)Torrent.Info["pieces"]).Bytes, pieceNumber * 20, Hash, 0, 20);
+            Buffer.BlockCopy(Torrent.Info.Get<BString>("pieces").EncodeAsBytes(), pieceNumber * 20, Hash, 0, 20);
         }
 
         public byte[] Bytes

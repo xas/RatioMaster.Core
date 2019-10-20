@@ -1,4 +1,6 @@
-﻿using BitTorrent;
+﻿using BencodeNET.Objects;
+using BencodeNET.Parsing;
+using BitTorrent;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,12 +17,12 @@ namespace RatioMaster.Core.TorrentProtocol
         private readonly SHA1 sha = new SHA1CryptoServiceProvider();
 
         public Collection<TorrentFile> PhysicalFiles { get; private set; }
-        public ulong totalLength { get; private set; }
-        public ValueDictionary Data { get; private set; }
+        public long totalLength { get; private set; }
+        public BDictionary Data { get; private set; }
 
         public Torrent()
         {
-            Data = new ValueDictionary();
+            Data = new BDictionary();
             PhysicalFiles = new Collection<TorrentFile>();
         }
 
@@ -34,15 +36,15 @@ namespace RatioMaster.Core.TorrentProtocol
         {
             get
             {
-                return (((ValueDictionary)Data["info"]).ContainsKey("length"));
+                return Info.ContainsKey("length");
             }
         }
 
-        public ValueDictionary Info
+        public BDictionary Info
         {
             get
             {
-                return (ValueDictionary)Data["info"];
+                return Data.Get<BDictionary>("info");
             }
         }
 
@@ -50,7 +52,7 @@ namespace RatioMaster.Core.TorrentProtocol
         {
             get
             {
-                return sha.ComputeHash((Data["info"]).Encode());
+                return sha.ComputeHash(Info?.EncodeAsBytes());
             }
         }
 
@@ -58,15 +60,18 @@ namespace RatioMaster.Core.TorrentProtocol
         {
             get
             {
-                // if (data.Contains("info") == false)
-                // data.Add("info", new ValueDictionary());
-                return BEncode.String(((ValueDictionary)Data["info"])["name"]);
+                return Info.Get<BString>("name").ToString();
             }
 
             set
             {
-                if (Data.ContainsKey("info") == false) Data.Add("info", new ValueDictionary());
-                ((ValueDictionary)Data["info"]).SetStringValue("name", value);
+                if (Data.ContainsKey("info") == false)
+                {
+                    Dictionary<BString, IBObject> newData = new Dictionary<BString, IBObject>();
+                    newData.Add(new BString("name"), new BString(value));
+                    Data.Add("info", new BDictionary(newData));
+                }
+                Info["name"] = new BString(value);
             }
         }
 
@@ -74,12 +79,12 @@ namespace RatioMaster.Core.TorrentProtocol
         {
             get
             {
-                return BEncode.String(Data["comment"]);
+                return Data.Get<BString>("comment").ToString();
             }
 
             set
             {
-                Data.SetStringValue("comment", value);
+                Data.Add("comment", value);
             }
         }
 
@@ -87,12 +92,12 @@ namespace RatioMaster.Core.TorrentProtocol
         {
             get
             {
-                return BEncode.String(Data["announce"]);
+                return Data.Get<BString>("announce").ToString();
             }
 
             set
             {
-                Data.SetStringValue("announce", value);
+                Data["announce"] = new BString(value);
             }
         }
 
@@ -100,12 +105,12 @@ namespace RatioMaster.Core.TorrentProtocol
         {
             get
             {
-                return BEncode.String(Data["created by"]);
+                return Data.Get<BString>("created by").ToString();
             }
 
             set
             {
-                Data.SetStringValue("created by", value);
+                Data["created by"] = new BString(value);
             }
         }
 
@@ -113,7 +118,8 @@ namespace RatioMaster.Core.TorrentProtocol
         {
             Data = null; // clear any old data
             bool hasOpened = false;
-            Data = new ValueDictionary();
+            Data = new BDictionary();
+            BencodeParser bParser = new BencodeParser(Encoding.GetEncoding(1252));
             FileStream fs = null;
             BinaryReader r = null;
 
@@ -123,7 +129,7 @@ namespace RatioMaster.Core.TorrentProtocol
                 r = new BinaryReader(fs);
 
                 // Parse the BEncode .torrent file
-                Data = (ValueDictionary)BEncode.Parse(r.BaseStream);
+                Data = bParser.Parse<BDictionary>(r.BaseStream);
 
                 // Check the torrent for its form, initialize this object
                 LoadTorrent();
@@ -172,14 +178,14 @@ namespace RatioMaster.Core.TorrentProtocol
             if (Data.ContainsKey("announce") == false) throw new IncompleteTorrentData("No tracker URL");
             if (Data.ContainsKey("info") == false) throw new IncompleteTorrentData("No public torrent information");
 
-            ValueDictionary info = (ValueDictionary)Data["info"];
+            BDictionary info = Data.Get<BDictionary>("info");
             if (info.ContainsKey("pieces") == false) throw new IncompleteTorrentData("No piece hash data");
 
-            ValueString pieces = (ValueString)info["pieces"];
+            BString pieces = info.Get<BString>("pieces");
             if ((pieces.Length % 20) != 0) throw new IncompleteTorrentData("Missing or damaged piece hash codes");
 
             // Parse out the hash codes
-            ParsePieceHashes(pieces.Bytes);
+            ParsePieceHashes(pieces.EncodeAsBytes());
 
             // Determine what files are in the torrent
             if (SingleFile) ParseSingleFile();
@@ -188,32 +194,31 @@ namespace RatioMaster.Core.TorrentProtocol
 
         private void ParseSingleFile()
         {
-            ValueDictionary info = (ValueDictionary)Data["info"];
-            totalLength = (ulong)((ValueNumber)info["length"]).Integer;
-            TorrentFile f = new TorrentFile(((ValueNumber)info["length"]).Integer, ((ValueString)info["name"]).StringValue);
+            totalLength = Info.Get<BNumber>("length").Value;
+            TorrentFile f = new TorrentFile(Info.Get<BNumber>("length").Value, Info.Get<BString>("name").ToString());
             PhysicalFiles.Add(f);
         }
 
         private void ParseMultipleFiles()
         {
-            ValueDictionary info = (ValueDictionary)Data["info"];
-            ValueList files = (ValueList)info["files"];
+            BList files = Info.Get<BList>("files");
             PhysicalFiles = null;
             PhysicalFiles = new Collection<TorrentFile>();
-            foreach (ValueDictionary o in files)
+            foreach (BDictionary o in files)
             {
-                ValueList components = (ValueList)o["path"];
+                BList components = o.Get<BList>("path");
                 bool first = true;
                 string path = "";
-                foreach (ValueString vs in components)
+                foreach (BString vs in components)
                 {
                     if (!first) path += "/";
                     first = false;
-                    path += vs.StringValue;
+                    path += vs.ToString();
                 }
 
-                totalLength += (ulong)((ValueNumber)o["length"]).Integer;
-                TorrentFile f = new TorrentFile(((ValueNumber)o["length"]).Integer, path);
+                long fileLength = o.Get<BNumber>("length").Value;
+                totalLength += fileLength;
+                TorrentFile f = new TorrentFile(fileLength, path);
                 PhysicalFiles.Add(f);
             }
         }

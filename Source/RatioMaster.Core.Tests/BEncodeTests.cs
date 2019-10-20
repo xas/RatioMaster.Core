@@ -1,7 +1,5 @@
-﻿using BitTorrent;
+﻿using BencodeNET.Objects;
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace RatioMaster.Core.Tests
@@ -19,8 +17,8 @@ namespace RatioMaster.Core.Tests
         [Test]
         public void ValueStringTest()
         {
-            ValueString vs = new ValueString();
-            Assert.That(vs.Bytes, Is.EqualTo(new byte[0]));
+            BString vs = new BString();
+            Assert.That(vs.EncodeAsBytes(), Is.EqualTo(new byte[0]));
         }
     }
 }

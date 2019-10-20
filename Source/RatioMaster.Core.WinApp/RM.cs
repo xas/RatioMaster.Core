@@ -11,7 +11,8 @@
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Windows.Forms;
-
+    using BencodeNET.Objects;
+    using BencodeNET.Parsing;
     using BitTorrent;
 
     using BytesRoad.Net.Sockets;
@@ -172,7 +173,7 @@
 
                         if (!MainForm._24h_format_enabled)
                             dateString = "[" + String.Format("{0:hh:mm:ss}", dtNow) + "]";
-                        else 
+                        else
                             dateString = "[" + String.Format("{0:HH:mm:ss}", dtNow) + "]";
 
                         logWindow.AppendText(dateString + " " + logLine + "\r\n");
@@ -437,14 +438,14 @@
                         break;
                     }
 
-		case "Transmission":
-		    {
-			cmbVersion.Items.Add("2.82 (14160)");
-			cmbVersion.Items.Add("2.92 (14714)");
-			cmbVersion.SelectedItem = "2.92 (14714)";
-			if (customPeersNum.Text == "0" || customPeersNum.Text == "") customPeersNum.Text = "200";
+                case "Transmission":
+                    {
+                        cmbVersion.Items.Add("2.82 (14160)");
+                        cmbVersion.Items.Add("2.92 (14714)");
+                        cmbVersion.SelectedItem = "2.92 (14714)";
+                        if (customPeersNum.Text == "0" || customPeersNum.Text == "") customPeersNum.Text = "200";
                         break;
-		    }
+                    }
 
                 case "BitLord":
                     {
@@ -715,7 +716,7 @@
                 }
             }
 
-            updateScrapStats("", "", "");
+            updateScrapStats(0, 0);
             totalRunningTimeCounter = 0;
             timerValue.Text = "updating...";
 
@@ -723,7 +724,6 @@
             updateProcessStarted = true;
             seedMode = false;
             requestScrap = checkRequestScrap.Checked;
-            updateScrapStats("", "", "");
             StartButton.Enabled = false;
             StartButton.BackColor = SystemColors.Control;
             StopButton.Enabled = true;
@@ -829,7 +829,7 @@
 
         internal void btnDefault_Click(object sender, EventArgs e)
         {
-            getnew = false;                
+            getnew = false;
             cmbClient.SelectedItem = DefaultClient;
             cmbVersion.SelectedItem = DefaultClientVersion;
 
@@ -896,7 +896,7 @@
             scrapStatsUpdated = false;
             currentTorrent = torrentInfo;
             string urlString = getUrlString(torrentInfo, eventType);
-            ValueDictionary dictionary1;
+            BDictionary dictionary1;
             try
             {
                 Uri uri = new Uri(urlString);
@@ -904,9 +904,9 @@
                 if (trackerResponse != null && trackerResponse.Dict != null)
                 {
                     dictionary1 = trackerResponse.Dict;
-                    string failure = BEncode.String(dictionary1["failure reason"]);
-                    if (failure.Length > 0)
+                    if (dictionary1.ContainsKey("failure reason"))
                     {
+                        string failure = dictionary1.Get<BString>("failure reason").ToString();
                         AddLogLine("Tracker Error: " + failure);
                         if (!checkIgnoreFailureReason.Checked)
                         {
@@ -917,32 +917,29 @@
                     }
                     else
                     {
-                        foreach (string key in trackerResponse.Dict.Keys)
+                        foreach (BString key in trackerResponse.Dict.Keys)
                         {
-                            if (key != "failure reason" && key != "peers")
+                            if (key != "peers")
                             {
-                                AddLogLine(key + ": " + BEncode.String(trackerResponse.Dict[key]));
+                                AddLogLine(key + ": " + trackerResponse.Dict[key].ToString());
                             }
                         }
 
                         if (dictionary1.ContainsKey("interval"))
                         {
-                            updateInterval(BEncode.String(dictionary1["interval"]));
+                            updateInterval(dictionary1.Get<BNumber>("interval").Value.ToString());
                         }
 
                         if (dictionary1.ContainsKey("complete") && dictionary1.ContainsKey("incomplete"))
                         {
-                            if (dictionary1.ContainsKey("complete") && dictionary1.ContainsKey("incomplete"))
-                            {
-                                updateScrapStats(BEncode.String(dictionary1["complete"]), BEncode.String(dictionary1["incomplete"]), "");
+                            updateScrapStats(dictionary1.Get<BNumber>("complete"), dictionary1.Get<BNumber>("incomplete"));
 
-                                decimal leechers = BEncode.String(dictionary1["incomplete"]).ParseValidInt(0);
-                                if (leechers == 0 && noLeechers.Checked)
-                                {
-                                    AddLogLine("Min number of leechers reached... setting upload speed to 0");
-                                    updateTextBox(uploadRate, "0");
-                                    chkRandUP.Checked = false;
-                                }
+                            long leechers = dictionary1.Get<BNumber>("incomplete").Value;
+                            if (leechers == 0 && noLeechers.Checked)
+                            {
+                                AddLogLine("Min number of leechers reached... setting upload speed to 0");
+                                updateTextBox(uploadRate, "0");
+                                chkRandUP.Checked = false;
                             }
                         }
 
@@ -950,32 +947,34 @@
                         {
                             haveInitialPeers = true;
                             string text4;
-                            if (dictionary1["peers"] is ValueString)
+                            if (dictionary1["peers"] is BString)
                             {
-                                text4 = BEncode.String(dictionary1["peers"]);
+                                text4 = dictionary1["peers"].ToString();
                                 Encoding encoding1 = Encoding.GetEncoding(0x6faf);
                                 byte[] buffer1 = encoding1.GetBytes(text4);
-                                BinaryReader reader1 = new BinaryReader(new MemoryStream(encoding1.GetBytes(text4)));
-                                PeerList list1 = new PeerList();
-                                for (int num1 = 0; num1 < buffer1.Length; num1 += 6)
+                                using (BinaryReader reader1 = new BinaryReader(new MemoryStream(encoding1.GetBytes(text4))))
                                 {
-                                    list1.Add(new Peer(reader1.ReadBytes(4), reader1.ReadInt16()));
-                                }
+                                    PeerList list1 = new PeerList();
+                                    for (int num1 = 0; num1 < buffer1.Length; num1 += 6)
+                                    {
+                                        list1.Add(new Peer(reader1.ReadBytes(4), reader1.ReadInt16()));
+                                    }
 
-                                reader1.Close();
-                                AddLogLine("peers: " + list1);
+                                    reader1.Close();
+                                    AddLogLine("peers: " + list1);
+                                }
                             }
-                            else if (dictionary1["peers"] is ValueList)
+                            else if (dictionary1["peers"] is BList)
                             {
                                 // text4 = "";
-                                ValueList list2 = (ValueList)dictionary1["peers"];
+                                BList list2 = dictionary1.Get<BList>("peers");
                                 PeerList list3 = new PeerList();
                                 foreach (object obj1 in list2)
                                 {
-                                    if (obj1 is ValueDictionary)
+                                    if (obj1 is BDictionary)
                                     {
-                                        ValueDictionary dictionary2 = (ValueDictionary)obj1;
-                                        list3.Add(new Peer(BEncode.String(dictionary2["ip"]), BEncode.String(dictionary2["port"]), BEncode.String(dictionary2["peer id"])));
+                                        BDictionary dictionary2 = obj1 as BDictionary;
+                                        list3.Add(new Peer(dictionary2["ip"].ToString(), dictionary2["port"].ToString(), dictionary2["peer id"].ToString()));
                                     }
                                 }
 
@@ -983,7 +982,7 @@
                             }
                             else
                             {
-                                text4 = BEncode.String(dictionary1["peers"]);
+                                text4 = dictionary1["peers"].ToString();
                                 AddLogLine("peers(x): " + text4);
                             }
                         }
@@ -1118,7 +1117,7 @@
                     TrackerResponse response1 = MakeWebRequestEx(uri1);
                     if ((response1 != null) && (response1.Dict != null))
                     {
-                        string text2 = BEncode.String(response1.Dict["failure reason"]);
+                        string text2 = response1.Dict["failure reason"].ToString();
                         if (text2.Length > 0)
                         {
                             AddLogLine("Tracker Error: " + text2);
@@ -1126,17 +1125,17 @@
                         else
                         {
                             AddLogLine("---------- Scrape Info -----------");
-                            ValueDictionary dictionary1 = (ValueDictionary)response1.Dict["files"];
+                            BDictionary dictionary1 = response1.Dict.Get<BDictionary>("files");
                             string text3 = Encoding.GetEncoding(0x4e4).GetString(currentTorrentFile.InfoHash);
-                            if (dictionary1[text3].GetType() == typeof(ValueDictionary))
+                            if (dictionary1[text3] is BDictionary)
                             {
-                                ValueDictionary dictionary2 = (ValueDictionary)dictionary1[text3];
-                                AddLogLine("complete: " + BEncode.String(dictionary2["complete"]));
-                                AddLogLine("downloaded: " + BEncode.String(dictionary2["downloaded"]));
-                                AddLogLine("incomplete: " + BEncode.String(dictionary2["incomplete"]));
-                                updateScrapStats(BEncode.String(dictionary2["complete"]), BEncode.String(dictionary2["incomplete"]), BEncode.String(dictionary2["downloaded"]));
-                                decimal leechers = BEncode.String(dictionary2["incomplete"]).ParseValidInt(-1);
-                                if (Leechers != -1  && (leechers == 0) && noLeechers.Checked)
+                                BDictionary dictionary2 = dictionary1.Get<BDictionary>(text3);
+                                AddLogLine("complete: " + dictionary2.Get<BNumber>("complete").Value);
+                                AddLogLine("downloaded: " + dictionary2.Get<BNumber>("downloaded").Value);
+                                AddLogLine("incomplete: " + dictionary2.Get<BNumber>("incomplete").Value);
+                                updateScrapStats(dictionary2.Get<BNumber>("complete").Value, dictionary2.Get<BNumber>("incomplete").Value);//, BEncode.String(dictionary2["downloaded"]));
+                                long leechers = dictionary2.Get<BNumber>("incomplete").Value;
+                                if (Leechers != -1 && (leechers == 0) && noLeechers.Checked)
                                 {
                                     AddLogLine("Min number of leechers reached... setting upload speed to 0");
                                     updateTextBox(uploadRate, "0");
@@ -1145,7 +1144,7 @@
                             }
                             else
                             {
-                                AddLogLine("Scrape returned : '" + ((ValueString)dictionary1[text3]).StringValue + "'");
+                                AddLogLine("Scrape returned : '" + (dictionary1[text3]).ToString() + "'");
                             }
                         }
                     }
@@ -1191,7 +1190,7 @@
             {
                 // Random random = new Random();
                 // modify Upload Rate
-                uploadCount.Text = FormatFileSize((ulong)torrentInfo.Uploaded);
+                uploadCount.Text = FormatFileSize(torrentInfo.Uploaded);
                 Int64 uploadedR = torrentInfo.UploadRate + RandomSP(txtRandUpMin.Text, txtRandUpMax.Text, chkRandUP.Checked);
 
                 // Int64 uploadedR = torrentInfo.uploadRate + (Int64)random.Next(10 * 1024) - 5 * 1024;
@@ -1199,7 +1198,7 @@
                 torrentInfo.Uploaded += uploadedR;
 
                 // modify Download Rate
-                downloadCount.Text = FormatFileSize((ulong)torrentInfo.Downloaded);
+                downloadCount.Text = FormatFileSize(torrentInfo.Downloaded);
                 if (!seedMode && torrentInfo.DownloadRate > 0)    // dont update download stats
                 {
                     Int64 downloadedR = torrentInfo.DownloadRate + RandomSP(txtRandDownMin.Text, txtRandDownMax.Text, chkRandDown.Checked);
@@ -1240,7 +1239,7 @@
                     fileSize.Text = (finishedPercent >= 100) ? "100" : SetPrecision(finishedPercent.ToString(), 2);
                 }
 
-                downloadCount.Text = FormatFileSize((ulong)torrentInfo.Downloaded);
+                downloadCount.Text = FormatFileSize(torrentInfo.Downloaded);
 
                 // modify Ratio Lable
                 if (torrentInfo.Downloaded / 1024 < 100)
@@ -1274,16 +1273,10 @@
         int Seeders = -1;
         int Leechers = -1;
 
-        internal void updateScrapStats(string seedStr, string leechStr, string finishedStr)
+        internal void updateScrapStats(long seedStr, long leechStr)
         {
-            if (!int.TryParse(seedStr, out Seeders))
-            {
-                Seeders = -1;
-            }
-            if (!int.TryParse(leechStr, out Leechers))
-            {
-                Leechers = -1;
-            }
+            Seeders = (int)seedStr;
+            Leechers = (int)leechStr;
 
             // if (seedLabel.InvokeRequired)
             // {
@@ -1292,11 +1285,11 @@
             // }
             // else
             // {
-                seedLabel.Text = "Seeders: " + seedStr;
-                leechLabel.Text = "Leechers: " + leechStr;
-                scrapStatsUpdated = true;
+            seedLabel.Text = "Seeders: " + seedStr;
+            leechLabel.Text = "Leechers: " + leechStr;
+            scrapStatsUpdated = true;
 
-                // AddLogLine("Scrap Stats Updated" + "\n" + "\n");
+            // AddLogLine("Scrap Stats Updated" + "\n" + "\n");
             // }
         }
 
@@ -1446,7 +1439,7 @@
             }
         }
 
-        internal static string FormatFileSize(ulong fileSize)
+        internal static string FormatFileSize(long fileSize)
         {
             if (fileSize < 0)
             {
@@ -2005,7 +1998,7 @@
                     return false;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 AddLogLine("Error when parsing: " + ex.Message);
                 return false;

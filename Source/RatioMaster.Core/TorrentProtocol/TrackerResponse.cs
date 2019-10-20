@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-
+using System.Text;
+using BencodeNET.Objects;
+using BencodeNET.Parsing;
 using BitTorrent;
 
 namespace RatioMaster.Core.TorrentProtocol
@@ -129,7 +131,7 @@ namespace RatioMaster.Core.TorrentProtocol
 
         public string ContentEncoding { get; private set; }
 
-        public ValueDictionary Dict { get; private set; }
+        public BDictionary Dict { get; private set; }
 
         public string Headers { get; private set; }
 
@@ -152,15 +154,16 @@ namespace RatioMaster.Core.TorrentProtocol
             return text1;
         }
 
-        private ValueDictionary ParseBEncodeDict(MemoryStream responseStream)
+        private BDictionary ParseBEncodeDict(MemoryStream responseStream)
         {
-            ValueDictionary dictionary1 = null;
+            BDictionary dictionary1 = null;
+            BencodeParser bParser = new BencodeParser(Encoding.GetEncoding(1252));
             if ((ContentEncoding == "gzip") || (ContentEncoding == "x-gzip"))
             {
                 var stream1 = new GZipStream(responseStream, CompressionMode.Decompress);
                 try
                 {
-                    return (ValueDictionary)BEncode.Parse(stream1);
+                    return bParser.Parse<BDictionary>(stream1);
                 }
                 catch (Exception)
                 {
@@ -169,7 +172,7 @@ namespace RatioMaster.Core.TorrentProtocol
 
             try
             {
-                dictionary1 = (ValueDictionary)BEncode.Parse(responseStream);
+                dictionary1 = bParser.Parse<BDictionary>(responseStream);
             }
             catch (Exception exception1)
             {
