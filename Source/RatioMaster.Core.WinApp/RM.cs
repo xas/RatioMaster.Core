@@ -1,26 +1,27 @@
-﻿namespace RatioMaster.Core
+﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Windows.Forms;
+using BencodeNET.Objects;
+using BencodeNET.Parsing;
+using BitTorrent;
+
+using BytesRoad.Net.Sockets;
+
+using Microsoft.Win32;
+using RatioMaster.Core.Helpers;
+using RatioMaster.Core.NetworkProtocol;
+using RatioMaster.Core.TorrentProtocol;
+
+namespace RatioMaster.Core
 {
-    using System;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Drawing;
-    using System.IO;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Text;
-    using System.Text.RegularExpressions;
-    using System.Threading;
-    using System.Windows.Forms;
-    using BencodeNET.Objects;
-    using BencodeNET.Parsing;
-    using BitTorrent;
-
-    using BytesRoad.Net.Sockets;
-
-    using Microsoft.Win32;
-    using RatioMaster.Core.Helpers;
-    using RatioMaster.Core.TorrentProtocol;
-
     internal partial class RM : UserControl
     {
         // Variables
@@ -37,7 +38,9 @@
 
         internal delegate void updateScrapCallback(string seedStr, string leechStr, string finishedStr);
 
-        private TorrentClient currentClient;
+        public NetworkManager networkManager { get; private set; }
+        public TorrentManager torrentManager { get; private set; }
+
         private ProxyInfo currentProxy;
         internal TorrentInfo currentTorrent = new TorrentInfo();
         internal Torrent currentTorrentFile = new Torrent();
@@ -105,6 +108,7 @@
 
         internal void deployDefaultValues()
         {
+            torrentManager = new TorrentManager();
             TorrentInfo torrent = new TorrentInfo();
             trackerAddress.Text = torrent.Tracker;
             shaHash.Text = torrent.Hash;
@@ -122,14 +126,14 @@
         {
             // Add log info
             AddLogLine("CLIENT EMULATION INFO:");
-            AddLogLine("Name: " + currentClient.Name);
-            AddLogLine("HttpProtocol: " + currentClient.HttpProtocol);
-            AddLogLine("HashUpperCase: " + currentClient.HashUpperCase);
-            AddLogLine("Key: " + currentClient.Key);
+            AddLogLine("Name: " + torrentManager.Client.Name);
+            AddLogLine("HttpProtocol: " + torrentManager.Client.HttpProtocol);
+            AddLogLine("HashUpperCase: " + torrentManager.Client.HashUpperCase);
+            AddLogLine("Key: " + torrentManager.Client.Key);
             AddLogLine("Headers:......");
-            AddLog(currentClient.Headers);
-            AddLogLine("PeerID: " + currentClient.PeerID);
-            AddLogLine("Query: " + currentClient.Query + "\n" + "\n");
+            AddLog(torrentManager.Client.Headers);
+            AddLogLine("PeerID: " + torrentManager.Client.PeerID);
+            AddLogLine("Query: " + torrentManager.Client.Query + "\n" + "\n");
         }
 
         internal void AddLog(string logLine)
@@ -641,11 +645,11 @@
             // deploy custom values
             torrent.Port = customPort.Text.ParseValidInt(torrent.Port);
             customPort.Text = torrent.Port.ToString();
-            torrent.Key = customKey.Text.GetValueDefault(currentClient.Key);
+            torrent.Key = customKey.Text.GetValueDefault(torrentManager.Client.Key);
             torrent.NumberOfPeers = customPeersNum.Text.GetValueDefault(torrent.NumberOfPeers);
-            currentClient.Key = customKey.Text.GetValueDefault(currentClient.Key);
-            torrent.PeerID = customPeerID.Text.GetValueDefault(currentClient.PeerID);
-            currentClient.PeerID = customPeerID.Text.GetValueDefault(currentClient.PeerID);
+            torrentManager.Client.Key = customKey.Text.GetValueDefault(torrentManager.Client.Key);
+            torrent.PeerID = customPeerID.Text.GetValueDefault(torrentManager.Client.PeerID);
+            torrentManager.Client.PeerID = customPeerID.Text.GetValueDefault(torrentManager.Client.PeerID);
 
             // Add log info
             AddLogLine("TORRENT INFO:");
@@ -741,7 +745,7 @@
             cmbStopAfter.Enabled = false;
             customPeersNum.Enabled = false;
             customPort.Enabled = false;
-            currentClient = TorrentClientFactory.GetClient(GetClientName());
+            torrentManager.CreateTorrentClient(GetClientName());
             currentTorrent = getCurrentTorrent();
             currentProxy = getCurrentProxy();
             AddClientInfo();
@@ -901,9 +905,9 @@
             {
                 Uri uri = new Uri(urlString);
                 TrackerResponse trackerResponse = MakeWebRequestEx(uri);
-                if (trackerResponse != null && trackerResponse.Dict != null)
+                if (trackerResponse != null && trackerResponse.Dico != null)
                 {
-                    dictionary1 = trackerResponse.Dict;
+                    dictionary1 = trackerResponse.Dico;
                     if (dictionary1.ContainsKey("failure reason"))
                     {
                         string failure = dictionary1.Get<BString>("failure reason").ToString();
@@ -917,11 +921,11 @@
                     }
                     else
                     {
-                        foreach (BString key in trackerResponse.Dict.Keys)
+                        foreach (BString key in trackerResponse.Dico.Keys)
                         {
                             if (key != "peers")
                             {
-                                AddLogLine(key + ": " + trackerResponse.Dict[key].ToString());
+                                AddLogLine(key + ": " + trackerResponse.Dico[key].ToString());
                             }
                         }
 
@@ -1082,8 +1086,8 @@
 
             if (eventType.Contains("started")) urlString = urlString.Replace("&natmapped=1&localip={localip}", "");
             if (!eventType.Contains("stopped")) urlString = urlString.Replace("&trackerid=48", "");
-            urlString += currentClient.Query;
-            urlString = urlString.Replace("{infohash}", HashUrlEncode(torrentInfo.Hash, currentClient.HashUpperCase));
+            urlString += torrentManager.Client.Query;
+            urlString = urlString.Replace("{infohash}", HashUrlEncode(torrentInfo.Hash, torrentManager.Client.HashUpperCase));
             urlString = urlString.Replace("{peerid}", peerID);
             urlString = urlString.Replace("{port}", port);
             urlString = urlString.Replace("{uploaded}", uploaded);
@@ -1115,9 +1119,9 @@
 
                     Uri uri1 = new Uri(text1);
                     TrackerResponse response1 = MakeWebRequestEx(uri1);
-                    if ((response1 != null) && (response1.Dict != null))
+                    if ((response1 != null) && (response1.Dico != null))
                     {
-                        string text2 = response1.Dict["failure reason"].ToString();
+                        string text2 = response1.Dico["failure reason"].ToString();
                         if (text2.Length > 0)
                         {
                             AddLogLine("Tracker Error: " + text2);
@@ -1125,7 +1129,7 @@
                         else
                         {
                             AddLogLine("---------- Scrape Info -----------");
-                            BDictionary dictionary1 = response1.Dict.Get<BDictionary>("files");
+                            BDictionary dictionary1 = response1.Dico.Get<BDictionary>("files");
                             string text3 = Encoding.GetEncoding(0x4e4).GetString(currentTorrentFile.InfoHash);
                             if (dictionary1[text3] is BDictionary)
                             {
@@ -1167,7 +1171,7 @@
             }
 
             urlString = urlString.Substring(0, index + 1) + "scrape" + urlString.Substring(index + 9);
-            string hash = HashUrlEncode(torrentInfo.Hash, currentClient.HashUpperCase);
+            string hash = HashUrlEncode(torrentInfo.Hash, torrentManager.Client.HashUpperCase);
             if (urlString.Contains("?"))
             {
                 urlString = urlString + "&";
@@ -1615,7 +1619,7 @@
                     }
                 }
 
-                string cmd = "GET " + path + " " + currentClient.HttpProtocol + "\r\n" + currentClient.Headers.Replace("{host}", host) + "\r\n";
+                string cmd = "GET " + path + " " + torrentManager.Client.HttpProtocol + "\r\n" + torrentManager.Client.Headers.Replace("{host}", host) + "\r\n";
                 AddLogLine("======== Sending Command to Tracker ========");
                 AddLogLine(cmd);
                 sock.Send(_usedEnc.GetBytes(cmd));
@@ -1648,7 +1652,7 @@
 
                     AddLogLine("======== Tracker Response ========");
                     AddLogLine(trackerResponse.Headers);
-                    if (trackerResponse.Dict == null)
+                    if (trackerResponse.Dico == null)
                     {
                         AddLogLine("*** Failed to decode tracker response :");
                         AddLogLine(trackerResponse.Body);
@@ -1869,12 +1873,12 @@
         internal void GetRandCustVal()
         {
             string clientname = GetClientName();
-            currentClient = TorrentClientFactory.GetClient(clientname);
-            customKey.Text = currentClient.Key;
-            customPeerID.Text = currentClient.PeerID;
+            torrentManager.CreateTorrentClient(clientname);
+            customKey.Text = torrentManager.Client.Key;
+            customPeerID.Text = torrentManager.Client.PeerID;
             currentTorrent.Port = rand.Next(1025, 65535);
             customPort.Text = currentTorrent.Port.ToString();
-            currentTorrent.NumberOfPeers = currentClient.DefNumWant.ToString();
+            currentTorrent.NumberOfPeers = torrentManager.Client.DefNumWant.ToString();
             customPeersNum.Text = currentTorrent.NumberOfPeers;
             lblGenStatus.Text = "Generation status: " + "generated new values for " + clientname;
         }
@@ -1882,20 +1886,20 @@
         internal void SetCustomValues()
         {
             string clientname = GetClientName();
-            currentClient = TorrentClientFactory.GetClient(clientname);
+            torrentManager.CreateTorrentClient(clientname);
             AddLogLine("Client changed: " + clientname);
-            if (!currentClient.Parse) GetRandCustVal();
+            if (!torrentManager.Client.Parse) GetRandCustVal();
             else
             {
-                string searchstring = currentClient.SearchString;
-                long maxoffset = currentClient.MaxOffset;
-                long startoffset = currentClient.StartOffset;
-                string process = currentClient.ProcessName;
+                string searchstring = torrentManager.Client.SearchString;
+                long maxoffset = torrentManager.Client.MaxOffset;
+                long startoffset = torrentManager.Client.StartOffset;
+                string process = torrentManager.Client.ProcessName;
                 string pversion = cmbVersion.SelectedItem.ToString();
                 if (GETDATA(process, pversion, searchstring, startoffset, maxoffset))
                 {
-                    customKey.Text = currentClient.Key;
-                    customPeerID.Text = currentClient.PeerID;
+                    customKey.Text = torrentManager.Client.Key;
+                    customPeerID.Text = torrentManager.Client.PeerID;
                     customPort.Text = currentTorrent.Port.ToString();
                     customPeersNum.Text = currentTorrent.NumberOfPeers;
                     lblGenStatus.Text = "Generation status: " + clientname + " found! Parsed all values!";
@@ -1951,15 +1955,15 @@
                         Match match1 = new Regex("&peer_id=(.+?)(&| )", RegexOptions.Compiled).Match(text1);
                         if (match1.Success)
                         {
-                            currentClient.PeerID = match1.Groups[1].ToString();
-                            AddLogLine("====> PeerID = " + currentClient.PeerID);
+                            torrentManager.Client.PeerID = match1.Groups[1].ToString();
+                            AddLogLine("====> PeerID = " + torrentManager.Client.PeerID);
                         }
 
                         match1 = new Regex("&key=(.+?)(&| )", RegexOptions.Compiled).Match(text1);
                         if (match1.Success)
                         {
-                            currentClient.Key = match1.Groups[1].ToString();
-                            AddLogLine("====> Key = " + currentClient.Key);
+                            torrentManager.Client.Key = match1.Groups[1].ToString();
+                            AddLogLine("====> Key = " + torrentManager.Client.Key);
                         }
 
                         match1 = new Regex("&port=(.+?)(&| )", RegexOptions.Compiled).Match(text1);
@@ -1975,7 +1979,7 @@
                             currentTorrent.NumberOfPeers = match1.Groups[1].ToString();
                             AddLogLine("====> NumWant = " + currentTorrent.NumberOfPeers);
                             int res;
-                            if (!int.TryParse(currentTorrent.NumberOfPeers, out res)) currentTorrent.NumberOfPeers = currentClient.DefNumWant.ToString();
+                            if (!int.TryParse(currentTorrent.NumberOfPeers, out res)) currentTorrent.NumberOfPeers = torrentManager.Client.DefNumWant.ToString();
                         }
 
                         num2 += currentOffset;

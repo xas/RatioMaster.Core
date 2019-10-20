@@ -1,10 +1,9 @@
+using BencodeNET.Objects;
+using BencodeNET.Parsing;
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using BencodeNET.Objects;
-using BencodeNET.Parsing;
-using BitTorrent;
 
 namespace RatioMaster.Core.TorrentProtocol
 {
@@ -90,8 +89,7 @@ namespace RatioMaster.Core.TorrentProtocol
                 }
                 else
                 {
-                    string text3 = string.Empty;
-                    text3 = reader1.ReadLine();
+                    string text3 = reader1.ReadLine();
                     int num2 = Convert.ToInt32(text3.Split(new char[] { ' ' })[0], 0x10);
                     while (num2 > 0)
                     {
@@ -115,7 +113,7 @@ namespace RatioMaster.Core.TorrentProtocol
                 }
 
                 stream1.Position = 0;
-                Dict = ParseBEncodeDict(stream1);
+                Dico = ParseBEncodeDict(stream1);
                 stream1.Position = 0;
                 var reader2 = new StreamReader(stream1);
                 Body = reader2.ReadToEnd();
@@ -131,7 +129,7 @@ namespace RatioMaster.Core.TorrentProtocol
 
         public string ContentEncoding { get; private set; }
 
-        public BDictionary Dict { get; private set; }
+        public BDictionary Dico { get; private set; }
 
         public string Headers { get; private set; }
 
