@@ -724,6 +724,11 @@ namespace RatioMaster.Core
             totalRunningTimeCounter = 0;
             timerValue.Text = "updating...";
 
+            // Initialization
+            Encoding _usedEnc = Encoding.GetEncoding(0x4e4);
+            networkManager = new NetworkManager(comboProxyType.SelectedIndex, textProxyHost.Text, textProxyPort.Text.ParseValidInt(0), _usedEnc.GetBytes(textProxyUser.Text), _usedEnc.GetBytes(textProxyPass.Text));
+            torrentManager.CreateTorrentClient(GetClientName());
+
             // txtStopValue.Text = res.ToString();
             updateProcessStarted = true;
             seedMode = false;
@@ -1651,7 +1656,7 @@ namespace RatioMaster.Core
                     }
 
                     AddLogLine("======== Tracker Response ========");
-                    AddLogLine(trackerResponse.Headers);
+                    AddLogLine(trackerResponse.Headers.ToString());
                     if (trackerResponse.Dico == null)
                     {
                         AddLogLine("*** Failed to decode tracker response :");
