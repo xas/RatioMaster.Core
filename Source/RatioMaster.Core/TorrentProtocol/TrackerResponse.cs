@@ -91,7 +91,7 @@ namespace RatioMaster.Core.TorrentProtocol
             long initialPosition = streamReader.BaseStream.Position;
             string endLine = "\r";
             char byteReaded = (char)((ushort)streamReader.BaseStream.ReadByte());
-            while ((byteReaded != '\r') && (byteReaded != '\n'))
+            while (byteReaded != '\r' && byteReaded != '\n')
             {
                 byteReaded = (char)((ushort)streamReader.BaseStream.ReadByte());
             }
@@ -139,13 +139,15 @@ namespace RatioMaster.Core.TorrentProtocol
             BencodeParser bParser = new BencodeParser(Encoding.GetEncoding(1252));
             if ((ContentEncoding == "gzip") || (ContentEncoding == "x-gzip"))
             {
-                var stream1 = new GZipStream(responseStream, CompressionMode.Decompress);
-                try
+                using (GZipStream stream = new GZipStream(responseStream, CompressionMode.Decompress))
                 {
-                    Dico = bParser.Parse<BDictionary>(stream1);
-                }
-                catch (Exception)
-                {
+                    try
+                    {
+                        Dico = bParser.Parse<BDictionary>(stream);
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
 

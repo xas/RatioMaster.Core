@@ -430,7 +430,7 @@ namespace RatioMaster.Core
         private static void NewMainItem(XmlDocument aXmlDoc, XmlElement aXmlElement, RM data, string name)
         {
             AppendItem(aXmlDoc, aXmlElement, name, "Name");
-            TorrentInfo torrentInfo = data.currentTorrent;
+            TorrentInfo torrentInfo = data.torrentManager.Info;
             if (torrentInfo.Filename != null)
             {
                 AppendItem(aXmlDoc, aXmlElement, torrentInfo.Filename, "Address");

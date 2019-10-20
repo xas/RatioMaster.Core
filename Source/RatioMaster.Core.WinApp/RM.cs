@@ -1,24 +1,17 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using RatioMaster.Core.Helpers;
+using RatioMaster.Core.NetworkProtocol;
+using RatioMaster.Core.TorrentProtocol;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
-using BencodeNET.Objects;
-using BencodeNET.Parsing;
-using BitTorrent;
-
-using BytesRoad.Net.Sockets;
-
-using Microsoft.Win32;
-using RatioMaster.Core.Helpers;
-using RatioMaster.Core.NetworkProtocol;
-using RatioMaster.Core.TorrentProtocol;
 
 namespace RatioMaster.Core
 {
@@ -41,9 +34,6 @@ namespace RatioMaster.Core
         public NetworkManager networkManager { get; private set; }
         public TorrentManager torrentManager { get; private set; }
 
-        private ProxyInfo currentProxy;
-        internal TorrentInfo currentTorrent = new TorrentInfo();
-        internal TcpListener localListen;
         private bool seedMode = false;
         private bool updateProcessStarted = false;
         private bool requestScrap;
@@ -99,23 +89,18 @@ namespace RatioMaster.Core
             {
                 @StopButton_Click(null, null);
             }
-
-            // this.Close();
-            // Process.GetCurrentProcess().Kill();
-            // Application.Exit();
         }
 
         internal void deployDefaultValues()
         {
             torrentManager = new TorrentManager();
-            TorrentInfo torrent = new TorrentInfo();
-            trackerAddress.Text = torrent.Tracker;
-            shaHash.Text = torrent.Hash;
-            long num1 = torrent.UploadRate / 1024;
+            trackerAddress.Text = torrentManager.Info.Tracker;
+            shaHash.Text = torrentManager.Info.Hash;
+            long num1 = torrentManager.Info.UploadRate / 1024;
             uploadRate.Text = num1.ToString();
-            long num2 = torrent.DownloadRate / 1024;
+            long num2 = torrentManager.Info.DownloadRate / 1024;
             downloadRate.Text = num2.ToString();
-            interval.Text = torrent.Interval.ToString();
+            interval.Text = torrentManager.Info.Interval.ToString();
             comboProxyType.SelectedItem = "None";
         }
 
@@ -149,8 +134,6 @@ namespace RatioMaster.Core
                     try
                     {
                         logWindow.AppendText(logLine);
-
-                        // logWindow.SelectionStart = logWindow.Text.Length;
                         logWindow.ScrollToCaret();
                     }
                     catch (Exception) { }
@@ -180,8 +163,6 @@ namespace RatioMaster.Core
                             dateString = "[" + String.Format("{0:HH:mm:ss}", dtNow) + "]";
 
                         logWindow.AppendText(dateString + " " + logLine + "\r\n");
-
-                        // logWindow.SelectionStart = logWindow.Text.Length;
                         logWindow.ScrollToCaret();
                     }
                     catch (Exception) { }
@@ -215,10 +196,11 @@ namespace RatioMaster.Core
 
         internal void SaveLog_FileOk(object sender, CancelEventArgs e)
         {
-            string file = SaveLog.FileName;
-            StreamWriter sw = new StreamWriter(file);
-            sw.Write(logWindow.Text);
-            sw.Close();
+            using (StreamWriter sw = new StreamWriter(SaveLog.FileName))
+            {
+                sw.Write(logWindow.Text);
+                sw.Close();
+            }
         }
 
         #endregion
@@ -227,148 +209,22 @@ namespace RatioMaster.Core
         {
             try
             {
-                if (checkTCPListen.Checked && localListen == null && currentProxy.ProxyType == ProxyType.None)
+                if (checkTCPListen.Checked && comboProxyType.SelectedIndex == 0)
                 {
-                    localListen = new TcpListener(IPAddress.Any, currentTorrent.Port);
-                    try
-                    {
-                        localListen.Start();
-                        AddLogLine("Started TCP listener on port " + currentTorrent.Port);
-                    }
-                    catch
-                    {
-                        AddLogLine("TCP listener is alredy started from other torrent or from your torrent client");
-                        return;
-                    }
-
-                    Thread myThread = new Thread(AcceptTcpConnection);
-                    myThread.Name = "AcceptTcpConnection() Thread";
-                    myThread.Start();
+                    networkManager.CreateTcpListener(torrentManager.Info.Port, torrentManager.Info.PeerID, torrentManager.File.InfoHash, torrentManager.File.InfoHashBytes);
                 }
             }
             catch (Exception e)
             {
                 AddLogLine("Error in OpenTcpListener(): " + e.Message);
-                if (localListen != null)
-                {
-                    localListen.Stop();
-                    localListen = null;
-                }
 
                 return;
             }
 
             AddLogLine("OpenTcpListener() successfully finished!");
         }
-
-        private void AcceptTcpConnection()
-        {
-            Socket socket1 = null;
-            try
-            {
-                Encoding encoding1 = Encoding.GetEncoding(0x6faf);
-                string text1;
-                while (true)
-                {
-                    socket1 = localListen.AcceptSocket();
-                    byte[] buffer1 = new byte[0x43];
-                    if ((socket1 != null) && socket1.Connected)
-                    {
-                        NetworkStream stream1 = new NetworkStream(socket1);
-                        stream1.ReadTimeout = 0x3e8;
-                        try
-                        {
-                            stream1.Read(buffer1, 0, buffer1.Length);
-                        }
-                        catch (Exception)
-                        {
-                        }
-
-                        text1 = encoding1.GetString(buffer1, 0, buffer1.Length);
-                        if ((text1.IndexOf("BitTorrent protocol") >= 0) && (text1.IndexOf(torrentManager.File.InfoHash) >= 0))
-                        {
-                            byte[] buffer2 = createHandshakeResponse();
-                            stream1.Write(buffer2, 0, buffer2.Length);
-                        }
-
-                        socket1.Close();
-                        stream1.Close();
-                        stream1.Dispose();
-                    }
-                }
-            }
-            catch (Exception exception1)
-            {
-                AddLogLine("Error in AcceptTcpConnection(): " + exception1.Message);
-                return;
-            }
-            finally
-            {
-                if (socket1 != null)
-                {
-                    socket1.Close();
-                    AddLogLine("Closed socket");
-                }
-
-                CloseTcpListener();
-            }
-        }
-
-        private Socket createRegularSocket()
-        {
-            Socket socket1 = null;
-            try
-            {
-                socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            }
-            catch (Exception exception1)
-            {
-                AddLogLine("createSocket error: " + exception1.Message);
-            }
-
-            return socket1;
-        }
-
-        private byte[] createChokeResponse()
-        {
-            byte[] buffer2 = new byte[5];
-            buffer2[3] = 1;
-            return buffer2;
-        }
-
-        private byte[] createHandshakeResponse()
-        {
-            int num1 = 0;
-            Encoding encoding1 = Encoding.GetEncoding(0x6faf);
-            new StringBuilder();
-            string text1 = "BitTorrent protocol";
-            byte[] buffer1 = new byte[0x100];
-            buffer1[num1++] = (byte)text1.Length;
-            encoding1.GetBytes(text1, 0, text1.Length, buffer1, num1);
-            num1 += text1.Length;
-            for (int num2 = 0; num2 < 8; num2++)
-            {
-                buffer1[num1++] = 0;
-            }
-
-            Buffer.BlockCopy(torrentManager.File.InfoHashBytes, 0, buffer1, num1, torrentManager.File.InfoHash.Length);
-            num1 += torrentManager.File.InfoHash.Length;
-            encoding1.GetBytes(currentTorrent.PeerID.ToCharArray(), 0, currentTorrent.PeerID.Length, buffer1, num1);
-            num1 += encoding1.GetByteCount(currentTorrent.PeerID);
-            return buffer1;
-        }
-
-        internal void CloseTcpListener()
-        {
-            if (localListen != null)
-            {
-                localListen.Stop();
-                localListen = null;
-                AddLogLine("TCP Listener closed");
-            }
-        }
-
         #endregion
+
         #region Get client
         internal string GetClientName()
         {
@@ -568,7 +424,7 @@ namespace RatioMaster.Core
                 torrentFile.Text = torrentFilePath;
                 trackerAddress.Text = torrentManager.File.Announce;
                 shaHash.Text = torrentManager.File.InfoHash;
-                txtTorrentSize.Text = FormatFileSize((torrentManager.File.TotalSize));
+                txtTorrentSize.Text = FormatFileSize(torrentManager.File.TotalSize);
             }
             catch (Exception ex)
             {
@@ -576,29 +432,11 @@ namespace RatioMaster.Core
             }
         }
 
-        private TorrentInfo getCurrentTorrent()
+        private void UpdateTorrentInfo(TorrentInfo torrent)
         {
-            Uri trackerUri;
-            TorrentInfo torrent = new TorrentInfo();
-            try
-            {
-                trackerUri = new Uri(trackerAddress.Text);
-            }
-            catch (Exception exception1)
-            {
-                AddLogLine(exception1.Message);
-                return torrent;
-            }
-
-            torrent.Tracker = trackerAddress.Text;
-            torrent.TrackerUri = trackerUri;
-            torrent.Hash = shaHash.Text;
             torrent.UploadRate = (Int64)(uploadRate.Text.ParseValidFloat(50) * 1024);
-
-            // uploadRate.Text = (torrent.uploadRate / (float)1024).ToString();
             torrent.DownloadRate = (Int64)(downloadRate.Text.ParseValidFloat(10) * 1024);
 
-            // downloadRate.Text = (torrent.downloadRate / (float)1024).ToString();
             torrent.Interval = interval.Text.ParseValidInt(torrent.Interval);
             interval.Text = torrent.Interval.ToString();
             double finishedPercent = fileSize.Text.ParseDouble(0);
@@ -615,6 +453,7 @@ namespace RatioMaster.Core
             }
 
             fileSize.Text = finishedPercent.ToString();
+            long size = torrentManager.File.TotalSize;
             if (torrentManager.File != null)
             {
                 if (finishedPercent == 0)
@@ -655,7 +494,7 @@ namespace RatioMaster.Core
             AddLogLine("Upload rate: " + torrent.UploadRate / 1024);
             AddLogLine("Download rate: " + torrent.DownloadRate / 1024);
             AddLogLine("Update interval: " + torrent.Interval);
-            AddLogLine("Size: " + torrentManager.File.TotalSize / 1024);
+            AddLogLine("Size: " + size / 1024);
             AddLogLine("Left: " + torrent.Totalsize / 1024);
             AddLogLine("Finished: " + finishedPercent);
             AddLogLine("Filename: " + torrent.Filename);
@@ -663,7 +502,6 @@ namespace RatioMaster.Core
             AddLogLine("Port: " + torrent.Port);
             AddLogLine("Key: " + torrent.Key);
             AddLogLine("PeerID: " + torrent.PeerID + "\n" + "\n");
-            return torrent;
         }
 
         internal void openFileDialog1_FileOk(object sender, CancelEventArgs e)
@@ -716,7 +554,7 @@ namespace RatioMaster.Core
                 }
             }
 
-            updateScrapStats(0, 0);
+            updateScrapStats(-1, -1);
             totalRunningTimeCounter = 0;
             timerValue.Text = "updating...";
 
@@ -746,9 +584,7 @@ namespace RatioMaster.Core
             cmbStopAfter.Enabled = false;
             customPeersNum.Enabled = false;
             customPort.Enabled = false;
-            torrentManager.CreateTorrentClient(GetClientName());
-            currentTorrent = getCurrentTorrent();
-            currentProxy = getCurrentProxy();
+            UpdateTorrentInfo(torrentManager.Info);
             AddClientInfo();
             OpenTcpListener();
             Thread myThread = new Thread(startProcess);
@@ -757,7 +593,7 @@ namespace RatioMaster.Core
             serverUpdateTimer.Start();
             remWork = 0;
             if ((string)cmbStopAfter.SelectedItem == "After time:") RemaningWork.Start();
-            requestScrapeFromTracker(currentTorrent);
+            requestScrapeFromTracker();
         }
 
         private void stopTimerAndCounters()
@@ -792,13 +628,13 @@ namespace RatioMaster.Core
                 customPeersNum.Enabled = true;
                 customPort.Enabled = true;
                 serverUpdateTimer.Stop();
-                CloseTcpListener();
                 temporaryIntervalCounter = 0;
                 timerValue.Text = "stopped";
-                currentTorrent.NumberOfPeers = "0";
+                torrentManager.Info.NumberOfPeers = "0";
                 updateProcessStarted = false;
                 RemaningWork.Stop();
                 remWork = 0;
+                networkManager.Close();
             }
         }
 
@@ -817,7 +653,7 @@ namespace RatioMaster.Core
             if (updateProcessStarted)
             {
                 OpenTcpListener();
-                temporaryIntervalCounter = currentTorrent.Interval;
+                temporaryIntervalCounter = torrentManager.Info.Interval;
             }
         }
 
@@ -894,120 +730,6 @@ namespace RatioMaster.Core
 
         #endregion
         #region Send Event To Tracker
-        private bool haveInitialPeers;
-
-        private bool sendEventToTracker(TorrentInfo torrentInfo, string eventType)
-        {
-            scrapStatsUpdated = false;
-            currentTorrent = torrentInfo;
-            string urlString = getUrlString(torrentInfo, eventType);
-            BDictionary dictionary1;
-            try
-            {
-                Uri uri = new Uri(urlString);
-                TrackerResponse trackerResponse = MakeWebRequestEx(uri);
-                if (trackerResponse != null && trackerResponse.Dico != null)
-                {
-                    dictionary1 = trackerResponse.Dico;
-                    if (dictionary1.ContainsKey("failure reason"))
-                    {
-                        string failure = dictionary1.Get<BString>("failure reason").ToString();
-                        AddLogLine("Tracker Error: " + failure);
-                        if (!checkIgnoreFailureReason.Checked)
-                        {
-                            StopButton_Click(null, null);
-                            AddLogLine("Stopped because of tracker error!!!");
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        foreach (BString key in trackerResponse.Dico.Keys)
-                        {
-                            if (key != "peers")
-                            {
-                                AddLogLine(key + ": " + trackerResponse.Dico[key].ToString());
-                            }
-                        }
-
-                        if (dictionary1.ContainsKey("interval"))
-                        {
-                            updateInterval(dictionary1.Get<BNumber>("interval").Value.ToString());
-                        }
-
-                        if (dictionary1.ContainsKey("complete") && dictionary1.ContainsKey("incomplete"))
-                        {
-                            updateScrapStats(dictionary1.Get<BNumber>("complete"), dictionary1.Get<BNumber>("incomplete"));
-
-                            long leechers = dictionary1.Get<BNumber>("incomplete").Value;
-                            if (leechers == 0 && noLeechers.Checked)
-                            {
-                                AddLogLine("Min number of leechers reached... setting upload speed to 0");
-                                updateTextBox(uploadRate, "0");
-                                chkRandUP.Checked = false;
-                            }
-                        }
-
-                        if (dictionary1.ContainsKey("peers"))
-                        {
-                            haveInitialPeers = true;
-                            string text4;
-                            if (dictionary1["peers"] is BString)
-                            {
-                                text4 = dictionary1["peers"].ToString();
-                                Encoding encoding1 = Encoding.GetEncoding(0x6faf);
-                                byte[] buffer1 = encoding1.GetBytes(text4);
-                                using (BinaryReader reader1 = new BinaryReader(new MemoryStream(encoding1.GetBytes(text4))))
-                                {
-                                    PeerList list1 = new PeerList();
-                                    for (int num1 = 0; num1 < buffer1.Length; num1 += 6)
-                                    {
-                                        list1.Add(new Peer(reader1.ReadBytes(4), reader1.ReadInt16()));
-                                    }
-
-                                    reader1.Close();
-                                    AddLogLine("peers: " + list1);
-                                }
-                            }
-                            else if (dictionary1["peers"] is BList)
-                            {
-                                // text4 = "";
-                                BList list2 = dictionary1.Get<BList>("peers");
-                                PeerList list3 = new PeerList();
-                                foreach (object obj1 in list2)
-                                {
-                                    if (obj1 is BDictionary)
-                                    {
-                                        BDictionary dictionary2 = obj1 as BDictionary;
-                                        list3.Add(new Peer(dictionary2["ip"].ToString(), dictionary2["port"].ToString(), dictionary2["peer id"].ToString()));
-                                    }
-                                }
-
-                                AddLogLine("peers: " + list3);
-                            }
-                            else
-                            {
-                                text4 = dictionary1["peers"].ToString();
-                                AddLogLine("peers(x): " + text4);
-                            }
-                        }
-                    }
-
-                    return false;
-                }
-                else
-                {
-                    AddLogLine("No connection in sendEventToTracker() !!!");
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                AddLogLine("Error in sendEventToTracker(): " + ex.Message);
-                return false;
-            }
-        }
-
         private delegate void stopTimerAndCountersCallback();
 
         delegate void SetIntervalCallback(string param);
@@ -1029,7 +751,7 @@ namespace RatioMaster.Core
                     {
                         if (temp > 3600) temp = 3600;
                         if (temp < 60) temp = 60;
-                        currentTorrent.Interval = temp;
+                        torrentManager.Info.Interval = temp;
                         AddLogLine("Updating Interval: " + temp);
                         interval.ReadOnly = false;
                         interval.Text = temp.ToString();
@@ -1039,156 +761,52 @@ namespace RatioMaster.Core
             }
         }
 
-        private static long RoundByDenominator(long value, long denominator)
-        {
-            return (denominator * (value / denominator));
-        }
-
-        private string getUrlString(TorrentInfo torrentInfo, string eventType)
-        {
-            // Random random = new Random();
-            string uploaded = "0";
-            if (torrentInfo.Uploaded > 0)
-            {
-                torrentInfo.Uploaded = RoundByDenominator(torrentInfo.Uploaded, 0x4000);
-                uploaded = torrentInfo.Uploaded.ToString();
-
-                // uploaded = Convert.ToString(torrentInfo.uploaded + random.Next(1, 1023));
-            }
-
-            string downloaded = "0";
-            if (torrentInfo.Downloaded > 0)
-            {
-                torrentInfo.Downloaded = RoundByDenominator(torrentInfo.Downloaded, 0x10);
-                downloaded = torrentInfo.Downloaded.ToString();
-
-                // downloaded = Convert.ToString(torrentInfo.downloaded + random.Next(1, 1023));
-            }
-
-            if (torrentInfo.Left > 0)
-            {
-                torrentInfo.Left = torrentInfo.Totalsize - torrentInfo.Downloaded;
-            }
-
-            string left = torrentInfo.Left.ToString();
-            string key = torrentInfo.Key;
-            string port = torrentInfo.Port.ToString();
-            string peerID = torrentInfo.PeerID;
-            string urlString;
-            urlString = torrentInfo.Tracker;
-            if (urlString.Contains("?"))
-            {
-                urlString += "&";
-            }
-            else
-            {
-                urlString += "?";
-            }
-
-            if (eventType.Contains("started")) urlString = urlString.Replace("&natmapped=1&localip={localip}", "");
-            if (!eventType.Contains("stopped")) urlString = urlString.Replace("&trackerid=48", "");
-            urlString += torrentManager.Client.Query;
-            urlString = urlString.Replace("{infohash}", HashUrlEncode(torrentInfo.Hash, torrentManager.Client.HashUpperCase));
-            urlString = urlString.Replace("{peerid}", peerID);
-            urlString = urlString.Replace("{port}", port);
-            urlString = urlString.Replace("{uploaded}", uploaded);
-            urlString = urlString.Replace("{downloaded}", downloaded);
-            urlString = urlString.Replace("{left}", left);
-            urlString = urlString.Replace("{event}", eventType);
-            if ((torrentInfo.NumberOfPeers == "0") && !eventType.ToLower().Contains("stopped")) torrentInfo.NumberOfPeers = "200";
-            urlString = urlString.Replace("{numwant}", torrentInfo.NumberOfPeers);
-            urlString = urlString.Replace("{key}", key);
-            urlString = urlString.Replace("{localip}", Functions.GetIp());
-            return urlString;
-        }
-
         #endregion
+
         #region Scrape
-        private void requestScrapeFromTracker(TorrentInfo torrentInfo)
+        private void requestScrapeFromTracker()
         {
             Seeders = -1;
             Leechers = -1;
             if (checkRequestScrap.Checked && !scrapStatsUpdated)
             {
-                try
+                torrentManager.RequestScrape(networkManager);
+                if (torrentManager.Leechers == 0 && noLeechers.Checked)
                 {
-                    string text1 = getScrapeUrlString(torrentInfo);
-                    if (text1 == "")
-                    {
-                        AddLogLine("This tracker doesnt seem to support scrape");
-                    }
-
-                    Uri uri1 = new Uri(text1);
-                    TrackerResponse response1 = MakeWebRequestEx(uri1);
-                    if ((response1 != null) && (response1.Dico != null))
-                    {
-                        string text2 = response1.Dico["failure reason"].ToString();
-                        if (text2.Length > 0)
-                        {
-                            AddLogLine("Tracker Error: " + text2);
-                        }
-                        else
-                        {
-                            AddLogLine("---------- Scrape Info -----------");
-                            BDictionary dictionary1 = response1.Dico.Get<BDictionary>("files");
-                            string text3 = Encoding.GetEncoding(0x4e4).GetString(torrentManager.File.InfoHashBytes);
-                            if (dictionary1[text3] is BDictionary)
-                            {
-                                BDictionary dictionary2 = dictionary1.Get<BDictionary>(text3);
-                                AddLogLine("complete: " + dictionary2.Get<BNumber>("complete").Value);
-                                AddLogLine("downloaded: " + dictionary2.Get<BNumber>("downloaded").Value);
-                                AddLogLine("incomplete: " + dictionary2.Get<BNumber>("incomplete").Value);
-                                updateScrapStats(dictionary2.Get<BNumber>("complete").Value, dictionary2.Get<BNumber>("incomplete").Value);//, BEncode.String(dictionary2["downloaded"]));
-                                long leechers = dictionary2.Get<BNumber>("incomplete").Value;
-                                if (Leechers != -1 && (leechers == 0) && noLeechers.Checked)
-                                {
-                                    AddLogLine("Min number of leechers reached... setting upload speed to 0");
-                                    updateTextBox(uploadRate, "0");
-                                    chkRandUP.Checked = false;
-                                }
-                            }
-                            else
-                            {
-                                AddLogLine("Scrape returned : '" + (dictionary1[text3]).ToString() + "'");
-                            }
-                        }
-                    }
-                }
-                catch (Exception exception1)
-                {
-                    AddLogLine("Scrape Error: " + exception1.Message);
+                    AddLogLine("Min number of leechers reached... setting upload speed to 0");
+                    updateTextBox(uploadRate, "0");
+                    chkRandUP.Checked = false;
                 }
             }
         }
 
         internal string getScrapeUrlString(TorrentInfo torrentInfo)
         {
-            string urlString;
-            urlString = torrentInfo.Tracker;
-            int index = urlString.LastIndexOf("/");
-            if (urlString.Substring(index + 1, 8).ToLower() != "announce")
+            UriBuilder url = new UriBuilder(torrentInfo.Tracker);
+            if (url.Uri.Segments.Last() != "announce")
             {
-                return "";
+                return string.Empty;
             }
 
-            urlString = urlString.Substring(0, index + 1) + "scrape" + urlString.Substring(index + 9);
             string hash = HashUrlEncode(torrentInfo.Hash, torrentManager.Client.HashUpperCase);
-            if (urlString.Contains("?"))
+
+            url.Path = url.Path.Replace("announce", "scrape");
+            if (url.Query?.Length > 1)
             {
-                urlString = urlString + "&";
+                url.Query = url.Query.Substring(1) + "&" + $"info_hash={hash}";
             }
             else
             {
-                urlString = urlString + "?";
+                url.Query = $"info_hash={hash}";
             }
-
-            return (urlString + "info_hash=" + hash);
+            return url.ToString();
         }
 
         #endregion
         #region Update Counters
         delegate void SetCountersCallback(TorrentInfo torrentInfo);
 
+        // TODO : Check torrentInfo
         private void updateCounters(TorrentInfo torrentInfo)
         {
             try
@@ -1221,7 +839,6 @@ namespace RatioMaster.Core
                     torrentInfo.DownloadRate = 0;
                     if (!seedMode)
                     {
-                        currentTorrent = torrentInfo;
                         seedMode = true;
                         temporaryIntervalCounter = 0;
                         Thread myThread = new Thread(completedProcess);
@@ -1231,7 +848,6 @@ namespace RatioMaster.Core
                 }
 
                 torrentInfo.Interval = int.Parse(interval.Text);
-                currentTorrent = torrentInfo;
                 double finishedPercent;
                 if (torrentInfo.Totalsize == 0)
                 {
@@ -1239,8 +855,8 @@ namespace RatioMaster.Core
                 }
                 else
                 {
-                    // finishedPercent = (((((float)currentTorrentFile.totalLength - (float)torrentInfo.totalsize) + (float)torrentInfo.downloaded) / (float)currentTorrentFile.totalLength) * 100);
-                    finishedPercent = ((torrentManager.File.TotalSize - (float)torrentInfo.Left) / ((float)torrentManager.File.TotalSize)) * 100.0;
+                    // finishedPercent = (((((float)torrentManager.File.totalLength - (float)torrentInfo.totalsize) + (float)torrentInfo.downloaded) / (float)torrentManager.File.totalLength) * 100);
+                    finishedPercent = (((torrentManager.File.TotalSize - (float)torrentInfo.Left)) / ((float)torrentManager.File.TotalSize)) * 100.0;
                     fileSize.Text = (finishedPercent >= 100) ? "100" : SetPrecision(finishedPercent.ToString(), 2);
                 }
 
@@ -1278,24 +894,11 @@ namespace RatioMaster.Core
         int Seeders = -1;
         int Leechers = -1;
 
-        internal void updateScrapStats(long seedStr, long leechStr)
+        internal void updateScrapStats(int seed, int leech)
         {
-            Seeders = (int)seedStr;
-            Leechers = (int)leechStr;
-
-            // if (seedLabel.InvokeRequired)
-            // {
-            //    updateScrapCallback d = new updateScrapCallback(updateScrapStats);
-            //    Invoke(d, new object[] { seedStr, leechStr, finishedStr });
-            // }
-            // else
-            // {
-            seedLabel.Text = "Seeders: " + seedStr;
-            leechLabel.Text = "Leechers: " + leechStr;
+            seedLabel.Text = "Seeders: " + seed;
+            leechLabel.Text = "Leechers: " + leech;
             scrapStatsUpdated = true;
-
-            // AddLogLine("Scrap Stats Updated" + "\n" + "\n");
-            // }
         }
 
         internal void StopModule()
@@ -1314,12 +917,12 @@ namespace RatioMaster.Core
 
                 if ((string)cmbStopAfter.SelectedItem == "When uploaded >")
                 {
-                    if (currentTorrent.Uploaded > long.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
+                    if (torrentManager.Info.Uploaded > long.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
                 }
 
                 if ((string)cmbStopAfter.SelectedItem == "When downloaded >")
                 {
-                    if (currentTorrent.Downloaded > int.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
+                    if (torrentManager.Info.Downloaded > int.Parse(txtStopValue.Text) * 1024 * 1024) StopButton_Click(null, null);
                 }
 
                 if ((string)cmbStopAfter.SelectedItem == "When leechers/seeders <")
@@ -1340,12 +943,12 @@ namespace RatioMaster.Core
         {
             if (updateProcessStarted)
             {
-                if (haveInitialPeers)
+                if (torrentManager.HasInitialPeers)
                 {
-                    updateCounters(currentTorrent);
+                    updateCounters(torrentManager.Info);
                 }
 
-                int num1 = currentTorrent.Interval - temporaryIntervalCounter;
+                int num1 = torrentManager.Info.Interval - temporaryIntervalCounter;
                 totalRunningTimeCounter++;
                 lblTotalTime.Text = ConvertToTime(totalRunningTimeCounter);
                 StopModule();
@@ -1374,15 +977,11 @@ namespace RatioMaster.Core
                 if (checkRandomUpload.Checked)
                 {
                     uploadRate.Text = (RandomSP(RandomUploadFrom.Text, RandomUploadTo.Text, true) / 1024).ToString();
-
-                    // uploadRate.Text = ((int)random1.Next(int.Parse(RandomUploadFrom.Text), int.Parse(RandomUploadTo.Text)) + (int)single1).ToString();
                 }
 
                 if (checkRandomDownload.Checked)
                 {
                     downloadRate.Text = (RandomSP(RandomDownloadFrom.Text, RandomDownloadTo.Text, true) / 1024).ToString();
-
-                    // downloadRate.Text = ((int)random1.Next(int.Parse(RandomDownloadFrom.Text), int.Parse(RandomDownloadTo.Text)) + (int)single2).ToString();
                 }
             }
             catch (Exception exception1)
@@ -1528,157 +1127,6 @@ namespace RatioMaster.Core
         }
 
         #endregion
-        internal SocketEx createSocket()
-        {
-            // create SocketEx object according to proxy settings
-            SocketEx sock = null;
-            try
-            {
-                sock = new SocketEx(currentProxy.ProxyType, currentProxy.ProxyServer, currentProxy.ProxyPort, currentProxy.ProxyUser, currentProxy.ProxyPassword);
-                sock.SetTimeout(0x30d40);
-            }
-            catch (Exception sockError)
-            {
-                AddLogLine("createSocket error: " + sockError.Message);
-            }
-
-            return sock;
-        }
-
-        private ProxyInfo getCurrentProxy()
-        {
-            Encoding _usedEnc = Encoding.GetEncoding(0x4e4);
-            ProxyInfo curProxy = new ProxyInfo();
-            switch (comboProxyType.SelectedIndex)
-            {
-                case 0:
-                    curProxy.ProxyType = ProxyType.None;
-                    break;
-                case 1:
-                    curProxy.ProxyType = ProxyType.HttpConnect;
-                    break;
-                case 2:
-                    curProxy.ProxyType = ProxyType.Socks4;
-                    break;
-                case 3:
-                    curProxy.ProxyType = ProxyType.Socks4a;
-                    break;
-                case 4:
-                    curProxy.ProxyType = ProxyType.Socks5;
-                    break;
-                default:
-                    curProxy.ProxyType = ProxyType.None;
-                    break;
-            }
-
-            curProxy.ProxyServer = textProxyHost.Text;
-            curProxy.ProxyPort = textProxyPort.Text.ParseValidInt(0);
-            curProxy.ProxyUser = _usedEnc.GetBytes(textProxyUser.Text);
-            curProxy.ProxyPassword = _usedEnc.GetBytes(textProxyPass.Text);
-
-            // Add log info
-            Encoding enc = System.Text.Encoding.ASCII;
-            AddLogLine("PROXY INFO:");
-            AddLogLine("proxyType = " + curProxy.ProxyType);
-            AddLogLine("proxyServer = " + curProxy.ProxyServer);
-            AddLogLine("proxyPort = " + curProxy.ProxyPort);
-            AddLogLine("proxyUser = " + enc.GetString(curProxy.ProxyUser));
-            AddLogLine("proxyPassword = " + enc.GetString(curProxy.ProxyPassword) + "\n" + "\n");
-            return curProxy;
-        }
-
-        private TrackerResponse MakeWebRequestEx(Uri reqUri)
-        {
-            Encoding _usedEnc = Encoding.GetEncoding(0x4e4);
-            SocketEx sock = null;
-            TrackerResponse trackerResponse;
-            try
-            {
-                string host = reqUri.Host;
-                int port = reqUri.Port;
-                string path = reqUri.PathAndQuery;
-                AddLogLine("Connecting to tracker (" + host + ") in port " + port);
-                sock = createSocket();
-                sock.PreAuthenticate = false;
-                int num2 = 0;
-                bool flag1 = false;
-                while ((num2 < 5) && !flag1)
-                {
-                    try
-                    {
-                        sock.Connect(host, port);
-                        flag1 = true;
-                        AddLogLine("Connected Successfully");
-                        continue;
-                    }
-                    catch (Exception exception1)
-                    {
-                        AddLogLine("Exception: " + exception1.Message + "; Type: " + exception1.GetType());
-                        AddLogLine("Failed connection attempt: " + num2);
-                        num2++;
-                        continue;
-                    }
-                }
-
-                string cmd = "GET " + path + " " + torrentManager.Client.HttpProtocol + "\r\n" + torrentManager.Client.Headers.Replace("{host}", host) + "\r\n";
-                AddLogLine("======== Sending Command to Tracker ========");
-                AddLogLine(cmd);
-                sock.Send(_usedEnc.GetBytes(cmd));
-
-                // simple reading loop
-                // read while have the data
-                try
-                {
-                    byte[] data = new byte[32 * 1024];
-                    MemoryStream memStream = new MemoryStream();
-                    while (true)
-                    {
-                        int dataLen = sock.Receive(data);
-                        if (0 == dataLen)
-                            break;
-                        memStream.Write(data, 0, dataLen);
-                    }
-
-                    if (memStream.Length == 0)
-                    {
-                        AddLogLine("Error : Tracker Response is empty");
-                        return null;
-                    }
-
-                    trackerResponse = new TrackerResponse(memStream);
-                    if (trackerResponse.doRedirect)
-                    {
-                        return MakeWebRequestEx(new Uri(trackerResponse.RedirectionURL));
-                    }
-
-                    AddLogLine("======== Tracker Response ========");
-                    AddLogLine(trackerResponse.Headers.ToString());
-                    if (trackerResponse.Dico == null)
-                    {
-                        AddLogLine("*** Failed to decode tracker response :");
-                        AddLogLine(trackerResponse.Body);
-                    }
-
-                    memStream.Dispose();
-                    return trackerResponse;
-                }
-                catch (Exception ex)
-                {
-                    sock.Close();
-                    AddLogLine(Environment.NewLine + ex.Message);
-                    return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                if (null != sock) sock.Close();
-                AddLogLine("Exception:" + ex.Message);
-                return null;
-            }
-
-            // if (null != sock) sock.Close();
-            // else return null;
-        }
 
         internal void RemaningWork_Tick(object sender, EventArgs e)
         {
@@ -1704,27 +1152,27 @@ namespace RatioMaster.Core
         #region Process
         internal void stopProcess()
         {
-            sendEventToTracker(currentTorrent, "&event=stopped");
+            torrentManager.SendEventToTracker(networkManager, "&event=stopped", !checkIgnoreFailureReason.Checked);
         }
 
         internal void completedProcess()
         {
-            sendEventToTracker(currentTorrent, "&event=completed");
-            requestScrapeFromTracker(currentTorrent);
+            torrentManager.SendEventToTracker(networkManager, "&event=completed", !checkIgnoreFailureReason.Checked);
+            requestScrapeFromTracker();
         }
 
         internal void continueProcess()
         {
-            sendEventToTracker(currentTorrent, "");
-            requestScrapeFromTracker(currentTorrent);
+            torrentManager.SendEventToTracker(networkManager, string.Empty, !checkIgnoreFailureReason.Checked);
+            requestScrapeFromTracker();
         }
 
         internal void startProcess()
         {
-            if (sendEventToTracker(currentTorrent, "&event=started"))
+            if (torrentManager.SendEventToTracker(networkManager, "&event=started", !checkIgnoreFailureReason.Checked))
             {
                 updateProcessStarted = true;
-                requestScrapeFromTracker(currentTorrent);
+                requestScrapeFromTracker();
             }
         }
 
@@ -1734,30 +1182,34 @@ namespace RatioMaster.Core
         {
             if (uploadRate.Text == "")
             {
-                currentTorrent.UploadRate = 0;
+                torrentManager.Info.UploadRate = 0;
             }
             else
             {
                 TorrentInfo torrent = new TorrentInfo();
-                currentTorrent.UploadRate = uploadRate.Text.ParseValidInt64(torrent.UploadRate / 1024) * 1024;
+                torrentManager.Info.UploadRate = uploadRate.Text.ParseValidInt64(torrent.UploadRate / 1024) * 1024;
             }
 
-            AddLogLine("Upload rate changed to " + (currentTorrent.UploadRate / 1024));
+            AddLogLine("Upload rate changed to " + (torrentManager.Info.UploadRate / 1024));
         }
 
         internal void downloadRate_TextChanged(object sender, EventArgs e)
         {
+            if (torrentManager?.Info == null)
+            {
+                return;
+            }
             if (downloadRate.Text == "")
             {
-                currentTorrent.DownloadRate = 0;
+                torrentManager.Info.DownloadRate = 0;
             }
             else
             {
                 TorrentInfo torrent = new TorrentInfo();
-                currentTorrent.DownloadRate = downloadRate.Text.ParseValidInt64(torrent.DownloadRate / 1024) * 1024;
+                torrentManager.Info.DownloadRate = downloadRate.Text.ParseValidInt64(torrent.DownloadRate / 1024) * 1024;
             }
 
-            AddLogLine("Download rate changed to " + (currentTorrent.DownloadRate / 1024));
+            AddLogLine("Download rate changed to " + (torrentManager.Info.DownloadRate / 1024));
         }
 
         #endregion
@@ -1850,66 +1302,55 @@ namespace RatioMaster.Core
 
         internal static int BtoI(bool b)
         {
-            if (b) return 1;
-            else return 0;
+            return b ? 1 : 0;
         }
 
         internal static bool ItoB(int param)
         {
-            if (param == 0) return false;
-            if (param == 1) return true;
-            return true;
+            return param == 0 ? false : true;
         }
 
         #endregion
         #region Custom values
-        internal void chkNewValues_CheckedChanged(object sender, EventArgs e)
-        {
-            if (chkNewValues.Checked)
-            {
-                SetCustomValues();
-            }
-        }
-
         internal void GetRandCustVal()
         {
-            string clientname = GetClientName();
-            torrentManager.CreateTorrentClient(clientname);
-            customKey.Text = torrentManager.Client.Key;
-            customPeerID.Text = torrentManager.Client.PeerID;
-            currentTorrent.Port = rand.Next(1025, 65535);
-            customPort.Text = currentTorrent.Port.ToString();
-            currentTorrent.NumberOfPeers = torrentManager.Client.DefNumWant.ToString();
-            customPeersNum.Text = currentTorrent.NumberOfPeers;
-            lblGenStatus.Text = "Generation status: " + "generated new values for " + clientname;
+            //string clientname = GetClientName();
+            //currentClient = TorrentClientFactory.GetClient(clientname);
+            //customKey.Text = currentClient.Key;
+            //customPeerID.Text = currentClient.PeerID;
+            //torrentManager.Info.Port = rand.Next(1025, 65535);
+            //customPort.Text = torrentManager.Info.Port.ToString();
+            //torrentManager.Info.NumberOfPeers = currentClient.DefNumWant.ToString();
+            //customPeersNum.Text = torrentManager.Info.NumberOfPeers;
+            //lblGenStatus.Text = "Generation status: " + "generated new values for " + clientname;
         }
 
         internal void SetCustomValues()
         {
-            string clientname = GetClientName();
-            torrentManager.CreateTorrentClient(clientname);
-            AddLogLine("Client changed: " + clientname);
-            if (!torrentManager.Client.Parse) GetRandCustVal();
-            else
-            {
-                string searchstring = torrentManager.Client.SearchString;
-                long maxoffset = torrentManager.Client.MaxOffset;
-                long startoffset = torrentManager.Client.StartOffset;
-                string process = torrentManager.Client.ProcessName;
-                string pversion = cmbVersion.SelectedItem.ToString();
-                if (GETDATA(process, pversion, searchstring, startoffset, maxoffset))
-                {
-                    customKey.Text = torrentManager.Client.Key;
-                    customPeerID.Text = torrentManager.Client.PeerID;
-                    customPort.Text = currentTorrent.Port.ToString();
-                    customPeersNum.Text = currentTorrent.NumberOfPeers;
-                    lblGenStatus.Text = "Generation status: " + clientname + " found! Parsed all values!";
-                }
-                else
-                {
-                    GetRandCustVal();
-                }
-            }
+            //string clientname = GetClientName();
+            //currentClient = TorrentClientFactory.GetClient(clientname);
+            //AddLogLine("Client changed: " + clientname);
+            //if (!currentClient.Parse) GetRandCustVal();
+            //else
+            //{
+            //    string searchstring = currentClient.SearchString;
+            //    long maxoffset = currentClient.MaxOffset;
+            //    long startoffset = currentClient.StartOffset;
+            //    string process = currentClient.ProcessName;
+            //    string pversion = cmbVersion.SelectedItem.ToString();
+            //    if (GETDATA(process, pversion, searchstring, startoffset, maxoffset))
+            //    {
+            //        customKey.Text = currentClient.Key;
+            //        customPeerID.Text = currentClient.PeerID;
+            //        customPort.Text = torrentManager.Info.Port.ToString();
+            //        customPeersNum.Text = torrentManager.Info.NumberOfPeers;
+            //        lblGenStatus.Text = "Generation status: " + clientname + " found! Parsed all values!";
+            //    }
+            //    else
+            //    {
+            //        GetRandCustVal();
+            //    }
+            //}
         }
 
         internal bool GETDATA(string client, string pversion, string SearchString, long startoffset, long maxoffset)
@@ -1970,17 +1411,17 @@ namespace RatioMaster.Core
                         match1 = new Regex("&port=(.+?)(&| )", RegexOptions.Compiled).Match(text1);
                         if (match1.Success)
                         {
-                            currentTorrent.Port = int.Parse(match1.Groups[1].ToString());
-                            AddLogLine("====> Port = " + currentTorrent.Port);
+                            torrentManager.Info.Port = int.Parse(match1.Groups[1].ToString());
+                            AddLogLine("====> Port = " + torrentManager.Info.Port);
                         }
 
                         match1 = new Regex("&numwant=(.+?)(&| )", RegexOptions.Compiled).Match(text1);
                         if (match1.Success)
                         {
-                            currentTorrent.NumberOfPeers = match1.Groups[1].ToString();
-                            AddLogLine("====> NumWant = " + currentTorrent.NumberOfPeers);
+                            torrentManager.Info.NumberOfPeers = match1.Groups[1].ToString();
+                            AddLogLine("====> NumWant = " + torrentManager.Info.NumberOfPeers);
                             int res;
-                            if (!int.TryParse(currentTorrent.NumberOfPeers, out res)) currentTorrent.NumberOfPeers = torrentManager.Client.DefNumWant.ToString();
+                            if (!int.TryParse(torrentManager.Info.NumberOfPeers, out res)) torrentManager.Info.NumberOfPeers = torrentManager.Client.DefNumWant.ToString();
                         }
 
                         num2 += currentOffset;
@@ -2087,18 +1528,6 @@ namespace RatioMaster.Core
         public override string ToString()
         {
             return "RatioMaster";
-        }
-
-        private void fileSize_TextChanged(object sender, EventArgs e)
-        {
-            // fileSize.Text = fileSize.Text.Replace('.', ',');
-            // fileSize.Select(fileSize.Text.Length, 0);
-        }
-
-        private void txtStopValue_TextChanged(object sender, EventArgs e)
-        {
-            // txtStopValue.Text = txtStopValue.Text.Replace('.', ',');
-            // txtStopValue.Select(txtStopValue.Text.Length, 0);
         }
     }
 }
