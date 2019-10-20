@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace BitTorrent
+namespace RatioMaster.Core.TorrentProtocol
 {
     public class TorrentFile
     {

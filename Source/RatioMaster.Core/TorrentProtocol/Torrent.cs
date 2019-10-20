@@ -1,8 +1,12 @@
+﻿using BitTorrent;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
-namespace BitTorrent
+namespace RatioMaster.Core.TorrentProtocol
 {
     public class Torrent
     {
@@ -140,7 +144,7 @@ namespace BitTorrent
 
             return hasOpened;
         }
-        
+
         private void ParsePieceHashes(byte[] hashdata)
         {
             int targetPieces = hashdata.Length / 20;
@@ -162,7 +166,7 @@ namespace BitTorrent
                 return pieceArray.Length;
             }
         }
-        
+
         private void LoadTorrent()
         {
             if (Data.ContainsKey("announce") == false) throw new IncompleteTorrentData("No tracker URL");

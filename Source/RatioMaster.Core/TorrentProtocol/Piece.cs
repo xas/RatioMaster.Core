@@ -1,7 +1,8 @@
+﻿using BitTorrent;
 using System;
 using System.IO;
 
-namespace BitTorrent
+namespace RatioMaster.Core.TorrentProtocol
 {
     public class Piece
     {
@@ -22,12 +23,14 @@ namespace BitTorrent
         {
             get
             {
-                FileStream fs = new FileStream(Torrent.PhysicalFiles[0].Path, FileMode.Open);
-                BinaryReader r = new BinaryReader(fs);
-                byte[] bytes = r.ReadBytes((int)fs.Length);
-                r.Close();
-                fs.Close();
-                return bytes;
+                using (FileStream fs = new FileStream(Torrent.PhysicalFiles[0].Path, FileMode.Open))
+                using (BinaryReader r = new BinaryReader(fs))
+                {
+                    byte[] bytes = r.ReadBytes((int)fs.Length);
+                    r.Close();
+                    fs.Close();
+                    return bytes;
+                }
             }
         }
     }
