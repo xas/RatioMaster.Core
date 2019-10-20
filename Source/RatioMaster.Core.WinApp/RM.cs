@@ -36,7 +36,6 @@ namespace RatioMaster.Core
 
         private bool seedMode = false;
         private bool updateProcessStarted = false;
-        private bool requestScrap;
         private bool scrapStatsUpdated;
         private int temporaryIntervalCounter = 0;
         bool IsExit = false;
@@ -566,7 +565,6 @@ namespace RatioMaster.Core
             // txtStopValue.Text = res.ToString();
             updateProcessStarted = true;
             seedMode = false;
-            requestScrap = checkRequestScrap.Checked;
             StartButton.Enabled = false;
             StartButton.BackColor = SystemColors.Control;
             StopButton.Enabled = true;
