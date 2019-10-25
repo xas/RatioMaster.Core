@@ -33,27 +33,37 @@ namespace RatioMaster.Core.NetworkProtocol
             {
                 throw new ArgumentNullException("AcceptTcpConnection:Listener");
             }
-            using (Socket socketAccepted = Listener.AcceptSocket())
+            while (true)
             {
-                if (socketAccepted != null && socketAccepted.Connected)
+                try
                 {
-                    byte[] buffer = new byte[0x43];
-                    using (NetworkStream streamNetwork = new NetworkStream(socketAccepted))
+                    using (Socket socketAccepted = Listener.AcceptSocket())
                     {
-                        streamNetwork.ReadTimeout = 0x3e8;
-                        try
+                        if (socketAccepted != null && socketAccepted.Connected)
                         {
-                            streamNetwork.Read(buffer, 0, buffer.Length);
-                        }
-                        catch (Exception)
-                        {
-                        }
+                            byte[] buffer = new byte[0x43];
+                            using (NetworkStream streamNetwork = new NetworkStream(socketAccepted))
+                            {
+                                streamNetwork.ReadTimeout = 0x3e8;
+                                try
+                                {
+                                    streamNetwork.Read(buffer, 0, buffer.Length);
+                                }
+                                catch (Exception)
+                                {
+                                }
 
-                        WriteHandShakeResponse(PeerId, buffer, streamNetwork);
+                                WriteHandShakeResponse(PeerId, buffer, streamNetwork);
 
-                        streamNetwork.Close();
-                        socketAccepted.Close();
+                                streamNetwork.Close();
+                                socketAccepted.Close();
+                            }
+                        }
                     }
+                }
+                catch (SocketException ex)
+                {
+                    return;
                 }
             }
         }
