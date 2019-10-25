@@ -50,8 +50,6 @@ namespace RatioMaster.Core
         {
             InitializeComponent();
             deployDefaultValues();
-            GetPCinfo();
-            ReadSettings();
         }
 
         internal void Form1_DragDrop(object sender, DragEventArgs e)
@@ -172,25 +170,6 @@ namespace RatioMaster.Core
         internal void ClearLog()
         {
             logWindow.Clear();
-        }
-
-        internal void GetPCinfo()
-        {
-            try
-            {
-                AddLogLine("CurrentDirectory: " + Environment.CurrentDirectory);
-                AddLogLine("HasShutdownStarted: " + Environment.HasShutdownStarted);
-                AddLogLine("MachineName: " + Environment.MachineName);
-                AddLogLine("OSVersion: " + Environment.OSVersion);
-                AddLogLine("ProcessorCount: " + Environment.ProcessorCount);
-                AddLogLine("UserDomainName: " + Environment.UserDomainName);
-                AddLogLine("UserInteractive: " + Environment.UserInteractive);
-                AddLogLine("UserName: " + Environment.UserName);
-                AddLogLine("Version: " + Environment.Version);
-                AddLogLine("WorkingSet: " + Environment.WorkingSet);
-                AddLogLine("");
-            }
-            catch (Exception) { }
         }
 
         internal void SaveLog_FileOk(object sender, CancelEventArgs e)
@@ -405,11 +384,6 @@ namespace RatioMaster.Core
             {
                 getnew = true;
                 return;
-            }
-
-            if (chkNewValues.Checked)
-            {
-                SetCustomValues();
             }
         }
 
@@ -674,7 +648,6 @@ namespace RatioMaster.Core
 
             // custom
             chkNewValues.Checked = true;
-            SetCustomValues();
             customPort.Text = "";
             customPeersNum.Text = "";
 
@@ -744,8 +717,7 @@ namespace RatioMaster.Core
                 if (updateProcessStarted)
                 {
                     int temp;
-                    bool bParse = int.TryParse(param, out temp);
-                    if (bParse)
+                    if (int.TryParse(param, out temp))
                     {
                         if (temp > 3600) temp = 3600;
                         if (temp < 60) temp = 60;
@@ -769,6 +741,9 @@ namespace RatioMaster.Core
             if (checkRequestScrap.Checked && !scrapStatsUpdated)
             {
                 torrentManager.RequestScrape(networkManager);
+                Seeders = torrentManager.Seeders;
+                Leechers = torrentManager.Leechers;
+                updateScrapStats(Seeders, Leechers);
                 if (torrentManager.Leechers == 0 && noLeechers.Checked)
                 {
                     AddLogLine("Min number of leechers reached... setting upload speed to 0");
@@ -777,29 +752,6 @@ namespace RatioMaster.Core
                 }
             }
         }
-
-        internal string getScrapeUrlString(TorrentInfo torrentInfo)
-        {
-            UriBuilder url = new UriBuilder(torrentInfo.Tracker);
-            if (url.Uri.Segments.Last() != "announce")
-            {
-                return string.Empty;
-            }
-
-            string hash = HashUrlEncode(torrentInfo.Hash, torrentManager.Client.HashUpperCase);
-
-            url.Path = url.Path.Replace("announce", "scrape");
-            if (url.Query?.Length > 1)
-            {
-                url.Query = url.Query.Substring(1) + "&" + $"info_hash={hash}";
-            }
-            else
-            {
-                url.Query = $"info_hash={hash}";
-            }
-            return url.ToString();
-        }
-
         #endregion
         #region Update Counters
         delegate void SetCountersCallback(TorrentInfo torrentInfo);
@@ -1041,6 +993,7 @@ namespace RatioMaster.Core
             }
         }
 
+        static string[] sizes = { "B", "KB", "MB", "GB", "TB" };
         internal static string FormatFileSize(long fileSize)
         {
             if (fileSize < 0)
@@ -1048,22 +1001,14 @@ namespace RatioMaster.Core
                 throw new ArgumentOutOfRangeException("fileSize");
             }
 
-            if (fileSize >= 0x40000000)
+            double len = fileSize;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
             {
-                return string.Format("{0:########0.00} GB", ((double)fileSize) / 1073741824);
+                order++;
+                len /= 1024;
             }
-
-            if (fileSize >= 0x100000)
-            {
-                return string.Format("{0:####0.00} MB", ((double)fileSize) / 1048576);
-            }
-
-            if (fileSize >= 0x400)
-            {
-                return string.Format("{0:####0.00} KB", ((double)fileSize) / 1024);
-            }
-
-            return string.Format("{0} bytes", fileSize);
+            return string.Format("{0:0.##} {1}", len, sizes[order]);
         }
 
         internal static string ToHexString(byte[] bytes)
@@ -1098,32 +1043,6 @@ namespace RatioMaster.Core
 
             return ret;
         }
-
-        internal string HashUrlEncode(string decoded, bool upperCase)
-        {
-            StringBuilder ret = new StringBuilder();
-            RandomStringGenerator stringGen = new RandomStringGenerator();
-            try
-            {
-                for (int i = 0; i < decoded.Length; i = i + 2)
-                {
-                    char tempChar;
-
-                    // the only case in which something should not be escaped, is when it is alphanum,
-                    // or it's in marks
-                    // in all other cases, encode it.
-                    tempChar = (char)Convert.ToUInt16(decoded.Substring(i, 2), 16);
-                    ret.Append(tempChar);
-                }
-            }
-            catch (Exception ex)
-            {
-                AddLogLine(ex.ToString());
-            }
-
-            return stringGen.Generate(ret.ToString(), upperCase);
-        }
-
         #endregion
 
         internal void RemaningWork_Tick(object sender, EventArgs e)
@@ -1163,6 +1082,9 @@ namespace RatioMaster.Core
         {
             torrentManager.SendEventToTracker(networkManager, string.Empty, !checkIgnoreFailureReason.Checked);
             requestScrapeFromTracker();
+            Seeders = torrentManager.Seeders;
+            Leechers = torrentManager.Leechers;
+            updateScrapStats(Seeders, Leechers);
         }
 
         internal void startProcess()
@@ -1171,6 +1093,9 @@ namespace RatioMaster.Core
             {
                 updateProcessStarted = true;
                 requestScrapeFromTracker();
+                Seeders = torrentManager.Seeders;
+                Leechers = torrentManager.Leechers;
+                updateScrapStats(Seeders, Leechers);
             }
         }
 
@@ -1212,92 +1137,6 @@ namespace RatioMaster.Core
 
         #endregion
         #region Settings
-        internal void ReadSettings()
-        {
-            try
-            {
-                RegistryKey reg = Registry.CurrentUser.OpenSubKey("Software\\RatioMaster.NET", true);
-
-                // TorrentInfo torrent = new TorrentInfo(0, 0);
-                if (reg == null)
-                {
-                    // The key doesn't exist; create it / open it
-                    Registry.CurrentUser.CreateSubKey("Software\\RatioMaster.NET");
-                    return;
-                }
-
-                string Version = (string)reg.GetValue("Version", "none");
-                if (Version == "none")
-                {
-                    btnDefault_Click(null, null);
-                    return;
-                }
-
-                chkNewValues.Checked = ItoB((int)reg.GetValue("NewValues", true));
-                getnew = false;
-                cmbClient.SelectedItem = reg.GetValue("Client", DefaultClient);
-                getnew = false;
-                cmbVersion.SelectedItem = reg.GetValue("ClientVersion", DefaultClientVersion);
-                uploadRate.Text = ((string)reg.GetValue("UploadRate", uploadRate.Text));
-                downloadRate.Text = ((string)reg.GetValue("DownloadRate", downloadRate.Text));
-                fileSize.Text = (string)reg.GetValue("fileSize", "0");
-
-                // fileSize.Text = "0";
-                interval.Text = (reg.GetValue("Interval", interval.Text)).ToString();
-                DefaultDirectory = (string)reg.GetValue("Directory", DefaultDirectory);
-                checkTCPListen.Checked = ItoB((int)reg.GetValue("TCPlistener", BtoI(checkTCPListen.Checked)));
-                checkRequestScrap.Checked = ItoB((int)reg.GetValue("ScrapeInfo", BtoI(checkRequestScrap.Checked)));
-                checkLogEnabled.Checked = ItoB((int)reg.GetValue("EnableLog", BtoI(checkLogEnabled.Checked)));
-
-                // Radnom value
-                chkRandUP.Checked = ItoB((int)reg.GetValue("GetRandUp", BtoI(chkRandUP.Checked)));
-                chkRandDown.Checked = ItoB((int)reg.GetValue("GetRandDown", BtoI(chkRandDown.Checked)));
-                txtRandUpMin.Text = (string)reg.GetValue("MinRandUp", txtRandUpMin.Text);
-                txtRandUpMax.Text = (string)reg.GetValue("MaxRandUp", txtRandUpMax.Text);
-                txtRandDownMin.Text = (string)reg.GetValue("MinRandDown", txtRandDownMin.Text);
-                txtRandDownMax.Text = (string)reg.GetValue("MaxRandDown", txtRandDownMax.Text);
-
-                // Custom values
-                if (chkNewValues.Checked == false)
-                {
-                    customKey.Text = (string)reg.GetValue("CustomKey", customKey.Text);
-                    customPeerID.Text = (string)reg.GetValue("CustomPeerID", customPeerID.Text);
-                    lblGenStatus.Text = "Generation status: " + "using last saved values";
-                }
-                else
-                {
-                    SetCustomValues();
-                }
-
-                customPort.Text = (string)reg.GetValue("CustomPort", customPort.Text);
-                customPeersNum.Text = (string)reg.GetValue("CustomPeers", customPeersNum.Text);
-
-                // Radnom value on next
-                checkRandomUpload.Checked = ItoB((int)reg.GetValue("GetRandUpNext", BtoI(checkRandomUpload.Checked)));
-                checkRandomDownload.Checked = ItoB((int)reg.GetValue("GetRandDownNext", BtoI(checkRandomDownload.Checked)));
-                RandomUploadFrom.Text = (string)reg.GetValue("MinRandUpNext", RandomUploadFrom.Text);
-                RandomUploadTo.Text = (string)reg.GetValue("MaxRandUpNext", RandomUploadTo.Text);
-                RandomDownloadFrom.Text = (string)reg.GetValue("MinRandDownNext", RandomDownloadFrom.Text);
-                RandomDownloadTo.Text = (string)reg.GetValue("MaxRandDownNext", RandomDownloadTo.Text);
-
-                // Stop after...
-                cmbStopAfter.SelectedItem = reg.GetValue("StopWhen", "Never");
-                txtStopValue.Text = (string)reg.GetValue("StopAfter", txtStopValue.Text);
-
-                // Proxy
-                comboProxyType.SelectedItem = reg.GetValue("ProxyType", comboProxyType.SelectedItem);
-                textProxyHost.Text = (string)reg.GetValue("ProxyAdress", textProxyHost.Text);
-                textProxyUser.Text = (string)reg.GetValue("ProxyUser", textProxyUser.Text);
-                textProxyPass.Text = (string)reg.GetValue("ProxyPass", textProxyPass.Text);
-                textProxyPort.Text = (string)reg.GetValue("ProxyPort", textProxyPort.Text);
-                checkIgnoreFailureReason.Checked = ItoB((int)reg.GetValue("IgnoreFailureReason", BtoI(checkIgnoreFailureReason.Checked)));
-            }
-            catch (Exception e)
-            {
-                AddLogLine("Error in ReadSettings(): " + e.Message);
-            }
-        }
-
         internal static int BtoI(bool b)
         {
             return b ? 1 : 0;
@@ -1310,47 +1149,6 @@ namespace RatioMaster.Core
 
         #endregion
         #region Custom values
-        internal void GetRandCustVal()
-        {
-            //string clientname = GetClientName();
-            //currentClient = TorrentClientFactory.GetClient(clientname);
-            //customKey.Text = currentClient.Key;
-            //customPeerID.Text = currentClient.PeerID;
-            //torrentManager.Info.Port = rand.Next(1025, 65535);
-            //customPort.Text = torrentManager.Info.Port.ToString();
-            //torrentManager.Info.NumberOfPeers = currentClient.DefNumWant.ToString();
-            //customPeersNum.Text = torrentManager.Info.NumberOfPeers;
-            //lblGenStatus.Text = "Generation status: " + "generated new values for " + clientname;
-        }
-
-        internal void SetCustomValues()
-        {
-            //string clientname = GetClientName();
-            //currentClient = TorrentClientFactory.GetClient(clientname);
-            //AddLogLine("Client changed: " + clientname);
-            //if (!currentClient.Parse) GetRandCustVal();
-            //else
-            //{
-            //    string searchstring = currentClient.SearchString;
-            //    long maxoffset = currentClient.MaxOffset;
-            //    long startoffset = currentClient.StartOffset;
-            //    string process = currentClient.ProcessName;
-            //    string pversion = cmbVersion.SelectedItem.ToString();
-            //    if (GETDATA(process, pversion, searchstring, startoffset, maxoffset))
-            //    {
-            //        customKey.Text = currentClient.Key;
-            //        customPeerID.Text = currentClient.PeerID;
-            //        customPort.Text = torrentManager.Info.Port.ToString();
-            //        customPeersNum.Text = torrentManager.Info.NumberOfPeers;
-            //        lblGenStatus.Text = "Generation status: " + clientname + " found! Parsed all values!";
-            //    }
-            //    else
-            //    {
-            //        GetRandCustVal();
-            //    }
-            //}
-        }
-
         internal bool GETDATA(string client, string pversion, string SearchString, long startoffset, long maxoffset)
         {
             try
