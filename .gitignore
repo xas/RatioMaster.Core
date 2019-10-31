@@ -113,4 +113,5 @@ vc.php
 **/MigrationBackup
 
 # Exclude packages lib
-**/wwwroot/lib
+**/wwwroot/lib/
+**/wwwroot/uploads/
