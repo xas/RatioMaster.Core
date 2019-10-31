@@ -4,5 +4,171 @@
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <p>Please, upload a torrent file</p>
+    <form id="frmService" method="post" enctype="application/x-www-form-urlencoded" asp-area="" asp-controller="Home" asp-action="Upload">
+        <div class="input-group mb-3">
+            <div class="custom-file">
+                <input type="file" class="custom-file-input" id="inputTorrentFile" aria-describedby="btnUpload">
+                <label class="custom-file-label" for="inputTorrentFile">Choose file</label>
+            </div>
+            <div class="input-group-append">
+                <button id="btnUpload" type="submit" data-action="Home/Upload" class="btn btn-primary">Upload</button>
+            </div>
+        </div>
+    </form>
+    <button id="btnStart" type="button" data-action="Home/Start" class="btn btn-primary">Start</button>
+    <button id="btnStop" type="button" data-action="Home/Stop" class="btn btn-primary">Stop</button>
+    <p><ul id="messagesList"></ul></p>
+    <div id="torrentInfo" class="card">
+        <div class="card-header">Torrent Info</div>
+        <div class="card-body">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="info-fileAddon">File</span>
+                </div>
+                <input type="text" class="form-control" id="info-file" placeholder="File" aria-label="File" aria-describedby="info-fileAddon">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="info-hashAddon">Hash</span>
+                </div>
+                <input type="text" class="form-control" id="info-hash" placeholder="Hash" aria-label="Hash" aria-describedby="info-hashAddon">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="info-trackerAddon">Tracker</span>
+                </div>
+                <input type="text" class="form-control" id="info-tracker" placeholder="Tracker" aria-label="Tracker" aria-describedby="info-trackerAddon">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="info-peersAddon">Peers</span>
+                </div>
+                <input type="text" class="form-control" id="info-peers" placeholder="Peers" aria-label="Peers" aria-describedby="info-peersAddon">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="info-peerIdAddon">Port</span>
+                </div>
+                <input type="text" class="form-control" id="info-peerId" placeholder="PeerID" aria-label="Peer ID" aria-describedby="info-peerIdAddon">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="info-clientAddon">Client Key</span>
+                </div>
+                <input type="text" class="form-control" id="info-client" placeholder="Client Key" aria-label="Client Key" aria-describedby="info-clientAddon">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="info-portAddon">Port</span>
+                </div>
+                <input type="text" class="form-control" id="info-port" placeholder="Port" aria-label="Port" aria-describedby="info-portAddon">
+            </div>
+        </div>
+    </div>
+    <div id="metrics" class="card">
+        <div class="card-header">Metrics</div>
+        <div class="card-body">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="metrics-uploadAddon">Uploaded</span>
+                </div>
+                <input type="text" class="form-control" id="metrics-upload" placeholder="Uploaded" aria-label="Uploaded" aria-describedby="metrics-uploadAddon">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="metrics-downloadAddon">Downloaded</span>
+                </div>
+                <input type="text" class="form-control" id="metrics-download" placeholder="Downloaded" aria-label="Downloaded" aria-describedby="metrics-downloadAddon">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="metrics-seedersAddon">Seeders</span>
+                </div>
+                <input type="text" class="form-control" id="metrics-seeders" placeholder="Seeders" aria-label="Seeders" aria-describedby="metrics-seedersddon">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="metrics-leechersAddon">Leechers</span>
+                </div>
+                <input type="text" class="form-control" id="metrics-leechers" placeholder="Leechers" aria-label="Leechers" aria-describedby="metrics-leechersAddon">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="metrics-timeAddon">Total Time</span>
+                </div>
+                <input type="text" class="form-control" id="metrics-time" placeholder="Time" aria-label="TotalTime" aria-describedby="metrics-timeAddon">
+            </div>
+        </div>
+    </div>
+
+    <div id="logs" class="card">
+        <div class="card-header">Logs</div>
+        <div class="card-body">
+            <textarea class="boxsizingBorder" rows="15"></textarea>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(function () {
+            $("#frmService").submit(function (e) {
+                e.preventDefault();
+
+                console.log('Doing ajax submit');
+
+                var formAction = $("#btnUpload").data("action");
+                var fdata = new FormData();
+
+                var fileInput = $('#inputTorrentFile')[0];
+                var file = fileInput.files[0];
+                fdata.append("files", file);
+
+                $.ajax({
+                    type: 'post',
+                    url: formAction,
+                    data: fdata,
+                    processData: false,
+                    contentType: false
+                }).done(function (result) {
+                    // do something with the result now
+                    console.log(result);
+                    if (result.status === "success") {
+                        alert(result.url);
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            });
+
+            $("#btnStart").click(function (e) {
+                e.preventDefault();
+                var formAction = $(this).data("action");
+                $.ajax({
+                    type: 'post',
+                    url: formAction,
+                    processData: false,
+                    contentType: false
+                }).done(function (result) {
+                    // do something with the result now
+                    console.log(result);
+                    if (result.status === "success") {
+                        alert(result.url);
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            });
+
+            $("#btnStop").click(function (e) {
+                e.preventDefault();
+                var formAction = $(this).data("action");
+                $.ajax({
+                    type: 'post',
+                    url: formAction,
+                    processData: false,
+                    contentType: false
+                }).done(function (result) {
+                    // do something with the result now
+                    console.log(result);
+                    if (result.status === "success") {
+                        alert(result.url);
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            });
+        })
+    </script>
+}
