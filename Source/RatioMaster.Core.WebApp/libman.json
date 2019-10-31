@@ -7,12 +7,22 @@
       "destination": "wwwroot/lib/signalr/"
     },
     {
-      "library": "twitter-bootstrap@4.3.1",
-      "destination": "wwwroot/lib/bootstrap/dist/"
-    },
-    {
       "library": "jquery@3.4.1",
       "destination": "wwwroot/lib/jquery/dist/"
+    },
+    {
+      "library": "twitter-bootstrap@4.3.1",
+      "destination": "wwwroot/lib/bootstrap/dist/",
+      "files": [
+        "css/bootstrap.css",
+        "js/bootstrap.bundle.js",
+        "js/bootstrap.bundle.js.map",
+        "js/bootstrap.bundle.min.js",
+        "js/bootstrap.bundle.min.js.map",
+        "css/bootstrap.css.map",
+        "css/bootstrap.min.css",
+        "css/bootstrap.min.css.map"
+      ]
     }
   ]
 }
