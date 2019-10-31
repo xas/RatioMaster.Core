@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using RatioMaster.Core.WebApp.Models;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,9 +18,11 @@ namespace RatioMaster.Core.WebApp.Hubs
             RatioHub = _hub;
         }
 
-        public Task UploadFile(CancellationToken cancellationToken, string filePath)
+        public async Task UploadFile(CancellationToken cancellationToken, string filePath)
         {
-            return Task.CompletedTask;
+            TorrentInfoModel model = new TorrentInfoModel();
+            model.FileName = Path.GetFileName(filePath);
+            await RatioHub.Clients.All.SendTorrentInfo(model);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -53,7 +54,8 @@ namespace RatioMaster.Core.WebApp.Hubs
 
         private async void UpdateAsync(object state)
         {
-            await RatioHub.Clients.All.UpdateMetrics();
+            TorrentMetricsModel model = new TorrentMetricsModel();
+            await RatioHub.Clients.All.UpdateMetrics(model);
         }
     }
 }
