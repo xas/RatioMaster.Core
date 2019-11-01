@@ -111,3 +111,7 @@ UpgradeLog*.XML
 vc.php
 **/.vs/
 **/MigrationBackup
+
+# Exclude packages lib
+**/wwwroot/lib/
+**/wwwroot/uploads/

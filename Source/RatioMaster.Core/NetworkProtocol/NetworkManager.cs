@@ -40,11 +40,10 @@ namespace RatioMaster.Core.NetworkProtocol
 
         public void CreateTcpListener(int port, string peerId, string infoHash, byte[] infoHashBytes)
         {
-            if (Socketeer != null)
+            if (Socketeer == null)
             {
-                Socketeer.Dispose();
+                Socketeer = new Socketeer(port, peerId, infoHash, infoHashBytes);
             }
-            Socketeer = new Socketeer(port, peerId, infoHash, infoHashBytes);
         }
 
         public static string GetIp()
@@ -137,6 +136,11 @@ namespace RatioMaster.Core.NetworkProtocol
 
         public void Close()
         {
+            if (Socketeer != null)
+            {
+                Socketeer.Dispose();
+                Socketeer = null;
+            }
             if (Socket != null)
             {
                 Socket.Close();
